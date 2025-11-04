@@ -13,7 +13,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/avinaxhroy/BillMe?style=social)](https://github.com/avinaxhroy/BillMe)
 
 <p align="center">
-  <strong>🚀 Enterprise-grade Android mobile shop app with GST compliance, IMEI-aware inventory, ML Kit OCR, thermal printing, and professional invoice generation.</strong>
+  <strong>🚀Enterprise-grade Mobile Shop Management app for Android with GST compliance, IMEI-aware inventory, ML Kit OCR, thermal printing, and professional invoice generation that Simply Works</strong>
 </p>
 
 <p align="center">
@@ -27,7 +27,7 @@
   <a href="#-license">License</a>
 </p>
 
-<img src="https://via.placeholder.com/800x400/1976D2/FFFFFF?text=BillMe+Mobile+Shop+App" alt="BillMe Banner" width="100%"/>
+<img src="http://avinas.me/wp-content/uploads/2025/11/BillME.png" alt="BillMe Banner" width="100%"/>
 
 </div>
 
