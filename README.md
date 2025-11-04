@@ -269,11 +269,9 @@
 
 <div align="center">
 
-| Dashboard | Billing | Inventory | Analytics |
+| Dashboard | Billing | Invoice History | Analytics |
 |-----------|---------|-----------|-----------|
-| <img src="https://via.placeholder.com/200x400/2196F3/FFFFFF?text=Dashboard" width="200"/> | <img src="https://via.placeholder.com/200x400/4CAF50/FFFFFF?text=Billing" width="200"/> | <img src="https://via.placeholder.com/200x400/FF9800/FFFFFF?text=Inventory" width="200"/> | <img src="https://via.placeholder.com/200x400/9C27B0/FFFFFF?text=Analytics" width="200"/> |
-
-*Replace these placeholders with actual app screenshots*
+| <img src="http://avinas.me/wp-content/uploads/2025/11/1.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/2.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/4.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/3.png" width="200"/> |
 
 </div>
 
