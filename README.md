@@ -878,7 +878,7 @@ Need help? Here's how to get support:
 | Thermal Printing | ✅ Complete | 2.0.0 |
 | Backup & Restore | ✅ Complete | 2.0.0 |
 | Customer Analytics | ✅ Complete | 2.0.0 |
-| Cloud Backup | ✅ Complete | 2.1.0 |
+| Cloud Backup | ✅ Complete | 2.0.0 |
 
 ---
 
