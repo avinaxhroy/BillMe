@@ -1,4 +1,6 @@
 <div align="center">
+  
+<img src="[http://avinas.me/wp-content/uploads/2025/11/BillME.png](http://avinas.me/wp-content/uploads/2025/11/BillMe-1.png)" alt="BillMe icon" width="100%"/>
 
 # 📱 BillMe
 
