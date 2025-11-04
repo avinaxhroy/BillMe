@@ -1,8 +1,8 @@
 <div align="center">
   
-<img src="http://avinas.me/wp-content/uploads/2025/11/BillMe-1.png" alt="BillMe icon" width="100px"/>
 
 # 📱 BillMe
+<img src="http://avinas.me/wp-content/uploads/2025/11/BillMe-1.png" alt="BillMe icon" width="100px"/>
 
 ### Modern Mobile Shop Management System
 
