@@ -1,0 +1,658 @@
+package com.billme.app.ui.screen.inventory
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.billme.app.data.local.entity.Product
+import com.billme.app.data.local.entity.ProductIMEI
+import com.billme.app.data.local.entity.IMEIStatus
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.*
+
+@Composable
+fun ExpandableProductCard(
+    product: Product,
+    imeis: List<ProductIMEI>?,
+    isExpanded: Boolean,
+    isSelectionMode: Boolean = false,
+    isSelected: Boolean = false,
+    onToggleExpand: () -> Unit,
+    onToggleSelection: () -> Unit = {},
+    onEditProduct: () -> Unit,
+    onDeleteProduct: () -> Unit,
+    onAddIMEI: () -> Unit,
+    onEditIMEI: (ProductIMEI) -> Unit,
+    onDeleteIMEI: (ProductIMEI) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
+    val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
+    
+    // For IMEI-tracked products (smartphones, laptops, tablets, TVs), show IMEI count
+    // For other products (accessories, chargers, etc.), show currentStock
+    val hasIMEITracking = !imeis.isNullOrEmpty()
+    val availableCount = if (hasIMEITracking) {
+        imeis.count { it.status == IMEIStatus.AVAILABLE }
+    } else {
+        product.currentStock
+    }
+    
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = if (isSelectionMode) onToggleSelection else onToggleExpand),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 2.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        ),
+        border = if (isSelected) {
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        } else {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+        }
+    ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val isCompactLayout = maxWidth < 360.dp
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (isCompactLayout) 12.dp else 16.dp)
+            ) {
+                // Product Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    // Selection checkbox
+                    if (isSelectionMode) {
+                        Checkbox(
+                            checked = isSelected,
+                            onCheckedChange = { onToggleSelection() },
+                            modifier = Modifier.padding(end = if (isCompactLayout) 8.dp else 12.dp)
+                        )
+                    }
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = product.productName,
+                            style = if (isCompactLayout) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                        
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = product.brand,
+                                style = if (isCompactLayout) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "•",
+                                style = if (isCompactLayout) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = product.model,
+                                style = if (isCompactLayout) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(6.dp))
+                        
+                        // Color and Variant Badges
+                        if (!product.color.isNullOrBlank() || !product.variant.isNullOrBlank()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(if (isCompactLayout) 4.dp else 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                if (!product.color.isNullOrBlank()) {
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = if (isCompactLayout) 6.dp else 8.dp, vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Palette,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(if (isCompactLayout) 12.dp else 14.dp),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(
+                                                text = product.color,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+                                
+                                if (!product.variant.isNullOrBlank()) {
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = if (isCompactLayout) 6.dp else 8.dp, vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Memory,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(if (isCompactLayout) 12.dp else 14.dp),
+                                                tint = MaterialTheme.colorScheme.secondary
+                                            )
+                                            Text(
+                                                text = product.variant,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(if (isCompactLayout) 20.dp else 24.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(if (isCompactLayout) 8.dp else 12.dp))
+                
+                // Product Info Row - Responsive layout
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(if (isCompactLayout) 8.dp else 12.dp)
+                ) {
+                    // Stock Card
+                    InfoCard(
+                        label = "Stock",
+                        value = "$availableCount",
+                        valueColor = if (availableCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f),
+                        isCompact = isCompactLayout
+                    )
+                    
+                    // Cost Price Card
+                    InfoCard(
+                        label = "Cost",
+                        value = if (isCompactLayout) formatCompactCurrency(product.costPrice) else currencyFormat.format(product.costPrice),
+                        valueColor = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                        isCompact = isCompactLayout
+                    )
+                    
+                    // Selling Price Card
+                    InfoCard(
+                        label = "Sell",
+                        value = if (isCompactLayout) formatCompactCurrency(product.sellingPrice) else currencyFormat.format(product.sellingPrice),
+                        valueColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                        isCompact = isCompactLayout
+                    )
+                }
+                
+                // Expanded Content
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                    
+                    // Action Buttons - Uniform sizing
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = onEditProduct,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Edit, 
+                                null, 
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                "Edit",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                        
+                        OutlinedButton(
+                            onClick = onDeleteProduct,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                        ) {
+                            Icon(
+                                Icons.Default.Delete, 
+                                null, 
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                "Delete",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                    
+                    // Add IMEI Button - Full width for products that need IMEI tracking
+                    val needsIMEITracking = product.category.contains("phone", ignoreCase = true) ||
+                            product.category.contains("smartphone", ignoreCase = true) ||
+                            product.category.contains("laptop", ignoreCase = true) ||
+                            product.category.contains("tablet", ignoreCase = true) ||
+                            product.category.contains("tv", ignoreCase = true) ||
+                            product.category.contains("television", ignoreCase = true) ||
+                            hasIMEITracking
+                    
+                    if (needsIMEITracking) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = onAddIMEI,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Add, 
+                                null, 
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                "Add IMEI",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // IMEIs List - Only show for products with IMEI tracking
+                    if (hasIMEITracking) {
+                        if (imeis.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No IMEIs added yet",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = "IMEIs (${imeis.size})",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            
+                            imeis.forEach { imei ->
+                                IMEIItemCard(
+                                    imei = imei,
+                                    onEdit = { onEditIMEI(imei) },
+                                    onDelete = { onDeleteIMEI(imei) },
+                                    dateFormat = dateFormat,
+                                    currencyFormat = currencyFormat
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    }
+}
+
+@Composable
+private fun IMEIItemCard(
+    imei: ProductIMEI,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    dateFormat: SimpleDateFormat,
+    currencyFormat: NumberFormat
+) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = when (imei.status) {
+                IMEIStatus.AVAILABLE -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                IMEIStatus.SOLD -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                IMEIStatus.RESERVED -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.2f)
+                IMEIStatus.DAMAGED -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+                IMEIStatus.RETURNED -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)
+            }
+        ),
+        shape = RoundedCornerShape(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    // IMEI 1
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "IMEI 1:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = imei.imeiNumber,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        )
+                    }
+                    
+                    // IMEI 2
+                    if (imei.imei2Number != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "IMEI 2:",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = imei.imei2Number,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            )
+                        }
+                    }
+                    
+                    // Serial Number
+                    if (imei.serialNumber != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "S/N:",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = imei.serialNumber,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            )
+                        }
+                    }
+                    
+                    // Box Number
+                    if (imei.boxNumber != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Box:",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = imei.boxNumber,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+                
+                // Status Badge
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = when (imei.status) {
+                        IMEIStatus.AVAILABLE -> MaterialTheme.colorScheme.primary
+                        IMEIStatus.SOLD -> MaterialTheme.colorScheme.surfaceVariant
+                        IMEIStatus.RESERVED -> MaterialTheme.colorScheme.tertiary
+                        IMEIStatus.DAMAGED -> MaterialTheme.colorScheme.error
+                        IMEIStatus.RETURNED -> MaterialTheme.colorScheme.secondary
+                    }
+                ) {
+                    Text(
+                        text = imei.status.name,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = when (imei.status) {
+                            IMEIStatus.AVAILABLE -> MaterialTheme.colorScheme.onPrimary
+                            IMEIStatus.SOLD -> MaterialTheme.colorScheme.onSurfaceVariant
+                            IMEIStatus.RESERVED -> MaterialTheme.colorScheme.onTertiary
+                            IMEIStatus.DAMAGED -> MaterialTheme.colorScheme.onError
+                            IMEIStatus.RETURNED -> MaterialTheme.colorScheme.onSecondary
+                        }
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(10.dp))
+            
+            // Bottom Info Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = dateFormat.format(Date(imei.purchaseDate.toEpochMilliseconds())),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = currencyFormat.format(imei.purchasePrice),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                // Action Buttons - Only for available IMEIs
+                if (imei.status == IMEIStatus.AVAILABLE) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        OutlinedIconButton(
+                            onClick = onEdit,
+                            modifier = Modifier.size(36.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                "Edit",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        OutlinedIconButton(
+                            onClick = { showDeleteConfirm = true },
+                            modifier = Modifier.size(36.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                "Delete",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Delete Confirmation
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete IMEI") },
+            text = { Text("Are you sure you want to delete this IMEI? This action cannot be undone.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDelete()
+                        showDeleteConfirm = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun InfoCard(
+    label: String,
+    value: String,
+    valueColor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier,
+    isCompact: Boolean = false
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = if (isCompact) 6.dp else 8.dp, 
+                    vertical = if (isCompact) 8.dp else 10.dp
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = label,
+                style = if (isCompact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(if (isCompact) 2.dp else 4.dp))
+            Text(
+                text = value,
+                style = if (isCompact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = valueColor,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+// Helper function to format currency in compact form
+private fun formatCompactCurrency(value: java.math.BigDecimal): String {
+    val amount = value.toDouble()
+    return when {
+        amount >= 100000 -> "₹%.1fL".format(amount / 100000)
+        amount >= 1000 -> "₹%.1fK".format(amount / 1000)
+        else -> "₹%.0f".format(amount)
+    }
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Modern Material Theme for BillMe -->
+    <style name="Theme.MobileShop" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/billme_primary</item>
+        <item name="colorPrimaryDark">@color/billme_primary_dark</item>
+        <item name="colorAccent">@color/billme_tertiary</item>
+        
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">@color/surface_light</item>
+        <item name="android:windowLightStatusBar">true</item>
+        
+        <!-- Navigation bar -->
+        <item name="android:navigationBarColor">@color/surface_light</item>
+        
+        <!-- Background -->
+        <item name="android:windowBackground">@color/background_light</item>
+        
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">@color/text_primary_light</item>
+        <item name="android:textColorSecondary">@color/text_secondary_light</item>
+    </style>
+    
+    <!-- Theme for dark mode -->
+    <style name="Theme.MobileShop.Night" parent="Theme.AppCompat.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/billme_primary_light</item>
+        <item name="colorPrimaryDark">@color/billme_primary_dark</item>
+        <item name="colorAccent">@color/billme_tertiary_light</item>
+        
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">@color/surface_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Navigation bar -->
+        <item name="android:navigationBarColor">@color/surface_dark</item>
+        
+        <!-- Background -->
+        <item name="android:windowBackground">@color/background_dark</item>
+        
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">@color/text_primary_dark</item>
+        <item name="android:textColorSecondary">@color/text_secondary_dark</item>
+    </style>
+</resources>

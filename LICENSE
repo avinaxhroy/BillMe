@@ -1,0 +1,87 @@
+Business Source License 1.1
+
+License text copyright (c) 2020, MariaDB Corporation Ab, all rights reserved.
+
+"Business Source License" is a trademark of MariaDB Corporation Ab.
+
+---
+
+Parameters
+
+Licensor: Avinaxhroy
+Licensed Work: BillMe
+Change License: MIT License
+Change Date: 2028-11-04
+
+For information about alternative licensing arrangements for the Licensed Work, 
+please contact the Licensor.
+
+---
+
+Business Source License 1.1
+
+Terms
+
+The Licensor hereby grants you the right to copy, modify, create derivative
+works, redistribute, and make non-production use of the Licensed Work. The
+Licensor may make an Additional Use Grant, above, permitting limited
+production use.
+
+Effective on the Change Date, or if You have not yet received a notification
+from the Licensor (by reasonable means), the date on which You first became
+aware that You had acquired the Licensed Work, whichever is earliest
+("Effective Date"; provided that the Effective Date will be extended by 30
+calendar days if You do not have actual knowledge that the Change License has
+been released or made publicly available), Licensor hereby grants you rights
+under the terms of the Change License, and the rights granted in the
+paragraph above terminate.
+
+If your use of the Licensed Work doesn't comply with the requirements
+currently in effect as described in this License, you must purchase a
+commercial license from the Licensor, its affiliated entities, or authorized
+resellers, or you must refrain from using the Licensed Work.
+
+All copies of the original and modified Licensed Work, and derivative works
+of the Licensed Work, are subject to this License. This License applies
+separately for each version of the Licensed Work and the Change Date may vary
+for each version of the Licensed Work released by Licensor.
+
+You may not remove or obscure any copyright, patent, trademark, or
+attribution notices that are contained on or in the Licensed Work. You must
+retain in the Licensed Work all notices of the existence of the notices in
+this paragraph.
+
+Licensor provides the Licensed Work (and each Contributor provides its
+Contributions) AS IS, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE, AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. UNDER NO
+CIRCUMSTANCES AND UNDER NO LEGAL THEORY, WHETHER IN TORT (INCLUDING
+NEGLIGENCE), CONTRACT, OR OTHERWISE, UNLESS REQUIRED BY APPLICABLE LAW (SUCH
+AS DELIBERATE AND GROSSLY NEGLIGENT ACTS) OR AGREED TO IN WRITING, SHALL ANY
+LICENSOR OR CONTRIBUTOR BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY DIRECT,
+INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY CHARACTER
+ARISING AS A RESULT OF THIS LICENSE OR OUT OF THE USE OR INABILITY TO USE THE
+LICENSED WORK (INCLUDING BUT NOT LIMITED TO DAMAGES FOR LOSS OF GOODWILL,
+WORK STOPPAGE, COMPUTER FAILURE OR MALFUNCTION, OR ANY AND ALL OTHER COMMERCIAL
+DAMAGES OR LOSSES), EVEN IF SUCH LICENSOR OR CONTRIBUTOR HAS BEEN ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGES.
+
+---
+
+Additional Information
+
+This work is licensed under the Business Source License 1.1 with a change date
+of 2028-11-04. After the change date, this work will be licensed under the MIT License.
+
+The BSL 1.1 allows you to:
+- Use and modify the software for non-production purposes
+- Contribute improvements and modifications to the project
+- Create derivative works
+
+You cannot:
+- Use the software for production purposes without a commercial license
+- Rebrand or repackage the software as your own
+- Remove or modify the license notices
+
+For more information about the Business Source License, visit:
+https://mariadb.com/bsl11/

@@ -1,0 +1,244 @@
+package com.billme.app.service
+
+import com.billme.app.data.local.entity.TransactionLineItem
+import com.billme.app.data.local.entity.Transaction
+import com.billme.app.hardware.ReceiptContent
+import com.billme.app.hardware.TextAlignment
+import com.billme.app.hardware.TextSize
+import com.billme.app.hardware.buildReceipt
+import com.billme.app.core.util.formatLocale
+import java.text.SimpleDateFormat
+import java.util.*
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Receipt configuration
+ */
+data class ReceiptConfig(
+    val shopName: String = "BillMe Pro",
+    val shopAddress: String = "Your Shop Address\nCity, State - PIN",
+    val shopPhone: String = "+91 98765 43210",
+    val shopEmail: String = "info@billme.com",
+    val gstNumber: String = "GST123456789",
+    val footerMessage: String = "Thank you for your business!",
+    val showQRCode: Boolean = true,
+    val showBarcode: Boolean = false
+)
+
+/**
+ * Service for generating receipt content
+ */
+@Singleton
+class ReceiptService @Inject constructor() {
+    
+    private val config = ReceiptConfig()
+    
+    private val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+    private val currencySymbol = "₹"
+    
+    /**
+     * Generate receipt for a transaction with line items
+     */
+    fun generateReceipt(transaction: Transaction, lineItems: List<TransactionLineItem>): ReceiptContent {
+        return buildReceipt {
+            // Header
+            bold(config.shopName, TextAlignment.CENTER)
+            newLine()
+            text(config.shopAddress, TextAlignment.CENTER, TextSize.SMALL)
+            text("Phone: ${config.shopPhone}", TextAlignment.CENTER, TextSize.SMALL)
+            text("Email: ${config.shopEmail}", TextAlignment.CENTER, TextSize.SMALL)
+            if (config.gstNumber.isNotBlank()) {
+                text("GST: ${config.gstNumber}", TextAlignment.CENTER, TextSize.SMALL)
+            }
+            newLine()
+            line('=')
+            newLine()
+            
+            // Transaction details
+            text("Receipt #: ${transaction.transactionNumber}")
+            text("Date: ${dateFormat.format(Date(transaction.transactionDate.toEpochMilliseconds()))}")
+            if (transaction.customerName?.isNotBlank() == true) {
+                text("Customer: ${transaction.customerName}")
+            }
+            if (transaction.customerPhone?.isNotBlank() == true) {
+                text("Phone: ${transaction.customerPhone}")
+            }
+            newLine()
+            line('-')
+            newLine()
+            
+            // Items header
+            text("Item", TextAlignment.LEFT)
+            text("Qty x Rate = Amount", TextAlignment.RIGHT)
+            line('-')
+            
+            // Items
+            lineItems.forEach { item ->
+                text(item.productName)
+                if (item.imeiSold.isNotBlank()) {
+                    text("IMEI: ${item.imeiSold}", size = TextSize.SMALL)
+                }
+                text("${item.quantity} x $currencySymbol${item.unitSellingPrice} = $currencySymbol${item.lineTotal}", TextAlignment.RIGHT)
+                newLine()
+            }
+            
+            line('-')
+            newLine()
+            
+            // Totals
+            text("Subtotal:", TextAlignment.LEFT)
+            text("$currencySymbol${transaction.subtotal}", TextAlignment.RIGHT)
+            
+            if (transaction.discountAmount.toDouble() > 0) {
+                text("Discount:", TextAlignment.LEFT)
+                text("-$currencySymbol${transaction.discountAmount}", TextAlignment.RIGHT)
+            }
+            
+            if (transaction.taxAmount.toDouble() > 0) {
+                text("Tax (${transaction.taxRate}%):", TextAlignment.LEFT)
+                text("$currencySymbol${transaction.taxAmount}", TextAlignment.RIGHT)
+            }
+            
+            line('=')
+            bold("TOTAL:", TextAlignment.LEFT)
+            bold("$currencySymbol${transaction.grandTotal}", TextAlignment.RIGHT)
+            line('=')
+            newLine()
+            
+            // Payment method
+            text("Payment: ${transaction.paymentMethod.name}")
+            if (transaction.profitAmount.toDouble() > 0) {
+                text("Profit: $currencySymbol${transaction.profitAmount}")
+            }
+            newLine()
+            
+            // Footer
+            if (config.footerMessage.isNotBlank()) {
+                text(config.footerMessage, TextAlignment.CENTER)
+                newLine()
+            }
+            
+            // QR Code with transaction details
+            if (config.showQRCode) {
+                val qrData = "TXN:${transaction.transactionNumber},AMT:${transaction.grandTotal},DATE:${dateFormat.format(Date(transaction.transactionDate.toEpochMilliseconds()))}"
+                qrCode(qrData)
+                newLine()
+            }
+            
+            text("Generated by BillMe", TextAlignment.CENTER, TextSize.SMALL)
+            newLine(3)
+        }
+    }
+    
+    /**
+     * Generate receipt for draft transaction (before completion)
+     */
+    fun generateDraftReceipt(
+        lineItems: List<TransactionLineItem>,
+        subtotal: Double,
+        discountPercent: Double,
+        gstPercent: Double,
+        customerName: String? = null,
+        customerPhone: String? = null
+    ): ReceiptContent {
+        val discountAmount = subtotal * (discountPercent / 100)
+        val afterDiscount = subtotal - discountAmount
+        val gstAmount = afterDiscount * (gstPercent / 100)
+        val total = afterDiscount + gstAmount
+        
+        return buildReceipt {
+            // Header
+            bold(config.shopName, TextAlignment.CENTER)
+            newLine()
+            text(config.shopAddress, TextAlignment.CENTER, TextSize.SMALL)
+            text("Phone: ${config.shopPhone}", TextAlignment.CENTER, TextSize.SMALL)
+            newLine()
+            line('=')
+            newLine()
+            
+            // Draft indication
+            bold("*** DRAFT RECEIPT ***", TextAlignment.CENTER)
+            newLine()
+            
+            // Transaction details
+            text("Date: ${dateFormat.format(Date())}")
+            if (customerName?.isNotBlank() == true) {
+                text("Customer: $customerName")
+            }
+            if (customerPhone?.isNotBlank() == true) {
+                text("Phone: $customerPhone")
+            }
+            newLine()
+            line('-')
+            newLine()
+            
+            // Items header
+            text("Item", TextAlignment.LEFT)
+            text("Qty x Rate = Amount", TextAlignment.RIGHT)
+            line('-')
+            
+            // Items
+            lineItems.forEach { item ->
+                text(item.productName)
+                if (item.imeiSold.isNotBlank()) {
+                    text("IMEI: ${item.imeiSold}", size = TextSize.SMALL)
+                }
+                text("${item.quantity} x $currencySymbol${item.unitSellingPrice} = $currencySymbol${item.lineTotal}", TextAlignment.RIGHT)
+                newLine()
+            }
+            
+            line('-')
+            newLine()
+            
+            // Totals
+            text("Subtotal:", TextAlignment.LEFT)
+            text("$currencySymbol${subtotal.formatLocale("%.2f")}", TextAlignment.RIGHT)
+            
+            if (discountPercent > 0) {
+                text("Discount (${discountPercent}%):", TextAlignment.LEFT)
+                text("-$currencySymbol${discountAmount.formatLocale("%.2f")}", TextAlignment.RIGHT)
+            }
+            
+            if (gstPercent > 0) {
+                text("GST (${gstPercent}%):", TextAlignment.LEFT)
+                text("$currencySymbol${gstAmount.formatLocale("%.2f")}", TextAlignment.RIGHT)
+            }
+            
+            line('=')
+            bold("TOTAL:", TextAlignment.LEFT)
+            bold("$currencySymbol${total.formatLocale("%.2f")}", TextAlignment.RIGHT)
+            line('=')
+            newLine()
+            
+            text("Generated by BillMe", TextAlignment.CENTER, TextSize.SMALL)
+            newLine(3)
+        }
+    }
+    
+    /**
+     * Generate test receipt for printer testing
+     */
+    fun generateTestReceipt(): ReceiptContent {
+        return buildReceipt {
+            bold("PRINTER TEST", TextAlignment.CENTER)
+            newLine()
+            text("Date: ${dateFormat.format(Date())}")
+            newLine()
+            line('-')
+            text("This is a test print")
+            text("to verify printer")
+            text("connectivity and")
+            text("formatting.")
+            line('-')
+            newLine()
+            text("If you can read this,")
+            text("your printer is working!")
+            newLine()
+            qrCode("TEST_PRINT_${System.currentTimeMillis()}")
+            newLine()
+            text("BillMe Test Print", TextAlignment.CENTER, TextSize.SMALL)
+            newLine(2)
+        }
+    }
+}

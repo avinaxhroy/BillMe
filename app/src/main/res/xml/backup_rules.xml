@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude sensitive data from backup -->
+    <exclude domain="database" />
+    <exclude domain="sharedpref" path="secret_prefs.xml" />
+    <exclude domain="file" path="private/" />
+    <!-- Include app preferences and non-sensitive data -->
+    <include domain="sharedpref" path="app_prefs.xml" />
+</full-backup-content>

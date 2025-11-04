@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Legacy Material Colors -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <!-- Modern Primary Colors - Blue Palette -->
+    <color name="billme_primary">#FF0066FF</color>
+    <color name="billme_primary_light">#FF4D94FF</color>
+    <color name="billme_primary_dark">#FF0047B3</color>
+    <color name="billme_primary_container">#FFE3F0FF</color>
+    
+    <!-- Secondary Colors - Purple/Violet -->
+    <color name="billme_secondary">#FF7C4DFF</color>
+    <color name="billme_secondary_light">#FFB47CFF</color>
+    <color name="billme_secondary_dark">#FF5E35B1</color>
+    <color name="billme_secondary_container">#FFF3EBFF</color>
+    
+    <!-- Tertiary Colors - Green -->
+    <color name="billme_tertiary">#FF00C853</color>
+    <color name="billme_tertiary_light">#FF5EFC82</color>
+    <color name="billme_tertiary_dark">#FF009624</color>
+    <color name="billme_tertiary_container">#FFE0FFE8</color>
+    
+    <!-- Status Colors -->
+    <color name="billme_success">#FF00C853</color>
+    <color name="billme_success_light">#FF69F0AE</color>
+    <color name="billme_success_container">#FFE0FFE8</color>
+    
+    <color name="billme_warning">#FFFFAB00</color>
+    <color name="billme_warning_light">#FFFFD54F</color>
+    <color name="billme_warning_container">#FFFFF8E1</color>
+    
+    <color name="billme_error">#FFFF3D00</color>
+    <color name="billme_error_light">#FFFF6E40</color>
+    <color name="billme_error_container">#FFFFEBEE</color>
+    
+    <color name="billme_info">#FF2196F3</color>
+    <color name="billme_info_light">#FF64B5F6</color>
+    <color name="billme_info_container">#FFE3F2FD</color>
+    
+    <!-- Background Colors - Light Theme -->
+    <color name="background_light">#FFFAFBFF</color>
+    <color name="surface_light">#FFFFFFFF</color>
+    <color name="surface_1_light">#FFF5F7FA</color>
+    <color name="surface_2_light">#FFEEF2F7</color>
+    <color name="surface_3_light">#FFE8EDF3</color>
+    
+    <!-- Background Colors - Dark Theme -->
+    <color name="background_dark">#FF0A0E1A</color>
+    <color name="surface_dark">#FF1A1F2E</color>
+    <color name="surface_1_dark">#FF232936</color>
+    <color name="surface_2_dark">#FF2D3340</color>
+    <color name="surface_3_dark">#FF373D4A</color>
+    
+    <!-- Text Colors - Light Theme -->
+    <color name="text_primary_light">#FF1A1A1A</color>
+    <color name="text_secondary_light">#FF616161</color>
+    <color name="text_tertiary_light">#FF9E9E9E</color>
+    <color name="text_disabled_light">#FFBDBDBD</color>
+    
+    <!-- Text Colors - Dark Theme -->
+    <color name="text_primary_dark">#FFFFFFFF</color>
+    <color name="text_secondary_dark">#FFB8BCC8</color>
+    <color name="text_tertiary_dark">#FF8A8E98</color>
+    <color name="text_disabled_dark">#FF5C5F68</color>
+    
+    <!-- Outline Colors -->
+    <color name="outline_light">#FFE0E0E0</color>
+    <color name="outline_variant_light">#FFF5F5F5</color>
+    <color name="outline_dark">#FF3D4152</color>
+    <color name="outline_variant_dark">#FF2A2E3A</color>
+    
+    <!-- Scrim -->
+    <color name="scrim">#88000000</color>
+    <color name="scrim_light">#33000000</color>
+    
+    <!-- Card Colors -->
+    <color name="card_light">#FFFFFFFF</color>
+    <color name="card_dark">#FF1E2433</color>
+    <color name="card_elevated_light">#FFFAFBFF</color>
+    <color name="card_elevated_dark">#FF252B3B</color>
+    
+    <!-- Divider Colors -->
+    <color name="divider_light">#FFE5E5E5</color>
+    <color name="divider_dark">#FF2D3340</color>
+    
+    <!-- Business Status Colors -->
+    <color name="status_paid">#FF00C853</color>
+    <color name="status_pending">#FFFFAB00</color>
+    <color name="status_overdue">#FFFF3D00</color>
+    <color name="status_draft">#FF9E9E9E</color>
+</resources>

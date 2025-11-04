@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spacing and Padding -->
+    <dimen name="spacing_none">0dp</dimen>
+    <dimen name="spacing_xxs">2dp</dimen>
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">12dp</dimen>
+    <dimen name="spacing_base">16dp</dimen>
+    <dimen name="spacing_lg">20dp</dimen>
+    <dimen name="spacing_xl">24dp</dimen>
+    <dimen name="spacing_xxl">32dp</dimen>
+    <dimen name="spacing_xxxl">48dp</dimen>
+    
+    <!-- Card Dimensions -->
+    <dimen name="card_elevation_default">2dp</dimen>
+    <dimen name="card_elevation_pressed">8dp</dimen>
+    <dimen name="card_elevation_dragged">16dp</dimen>
+    <dimen name="card_corner_radius">12dp</dimen>
+    <dimen name="card_corner_radius_large">16dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    
+    <!-- Button Dimensions -->
+    <dimen name="button_height_small">36dp</dimen>
+    <dimen name="button_height_medium">48dp</dimen>
+    <dimen name="button_height_large">56dp</dimen>
+    <dimen name="button_corner_radius">12dp</dimen>
+    <dimen name="button_padding_horizontal">24dp</dimen>
+    <dimen name="button_padding_vertical">12dp</dimen>
+    
+    <!-- Icon Sizes -->
+    <dimen name="icon_size_xs">16dp</dimen>
+    <dimen name="icon_size_sm">20dp</dimen>
+    <dimen name="icon_size_md">24dp</dimen>
+    <dimen name="icon_size_lg">32dp</dimen>
+    <dimen name="icon_size_xl">48dp</dimen>
+    <dimen name="icon_size_xxl">64dp</dimen>
+    
+    <!-- Avatar/Profile Image Sizes -->
+    <dimen name="avatar_size_xs">24dp</dimen>
+    <dimen name="avatar_size_sm">32dp</dimen>
+    <dimen name="avatar_size_md">48dp</dimen>
+    <dimen name="avatar_size_lg">64dp</dimen>
+    <dimen name="avatar_size_xl">96dp</dimen>
+    
+    <!-- Text Field Dimensions -->
+    <dimen name="text_field_height">56dp</dimen>
+    <dimen name="text_field_corner_radius">12dp</dimen>
+    <dimen name="text_field_padding">16dp</dimen>
+    
+    <!-- Divider -->
+    <dimen name="divider_thickness">1dp</dimen>
+    <dimen name="divider_thickness_thick">2dp</dimen>
+    
+    <!-- List Item Dimensions -->
+    <dimen name="list_item_height_small">48dp</dimen>
+    <dimen name="list_item_height_medium">56dp</dimen>
+    <dimen name="list_item_height_large">72dp</dimen>
+    <dimen name="list_item_padding">16dp</dimen>
+    
+    <!-- App Bar Dimensions -->
+    <dimen name="app_bar_height">56dp</dimen>
+    <dimen name="app_bar_elevation">4dp</dimen>
+    
+    <!-- Bottom Navigation -->
+    <dimen name="bottom_nav_height">56dp</dimen>
+    <dimen name="bottom_nav_elevation">8dp</dimen>
+    
+    <!-- Dialog Dimensions -->
+    <dimen name="dialog_corner_radius">24dp</dimen>
+    <dimen name="dialog_padding">24dp</dimen>
+    <dimen name="dialog_max_width">560dp</dimen>
+    
+    <!-- Bottom Sheet -->
+    <dimen name="bottom_sheet_corner_radius">28dp</dimen>
+    <dimen name="bottom_sheet_peek_height">56dp</dimen>
+    
+    <!-- Chip Dimensions -->
+    <dimen name="chip_height">32dp</dimen>
+    <dimen name="chip_corner_radius">16dp</dimen>
+    <dimen name="chip_padding_horizontal">12dp</dimen>
+    
+    <!-- Badge Dimensions -->
+    <dimen name="badge_size">20dp</dimen>
+    <dimen name="badge_size_large">24dp</dimen>
+    
+    <!-- Minimum Touch Target -->
+    <dimen name="min_touch_target">48dp</dimen>
+    
+    <!-- Image Dimensions -->
+    <dimen name="image_corner_radius">12dp</dimen>
+    <dimen name="thumbnail_size">80dp</dimen>
+    <dimen name="image_preview_size">120dp</dimen>
+    
+    <!-- Responsive Breakpoints -->
+    <dimen name="screen_padding_compact">16dp</dimen>
+    <dimen name="screen_padding_medium">24dp</dimen>
+    <dimen name="screen_padding_expanded">32dp</dimen>
+    
+    <!-- Invoice/Bill Specific -->
+    <dimen name="invoice_card_width">280dp</dimen>
+    <dimen name="invoice_card_height">160dp</dimen>
+    <dimen name="bill_item_height">64dp</dimen>
+    
+    <!-- Chart and Graph -->
+    <dimen name="chart_height_small">120dp</dimen>
+    <dimen name="chart_height_medium">200dp</dimen>
+    <dimen name="chart_height_large">280dp</dimen>
+    
+    <!-- Search Bar -->
+    <dimen name="search_bar_height">48dp</dimen>
+    <dimen name="search_bar_corner_radius">24dp</dimen>
+    
+    <!-- FAB (Floating Action Button) -->
+    <dimen name="fab_size_normal">56dp</dimen>
+    <dimen name="fab_size_mini">40dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+</resources>

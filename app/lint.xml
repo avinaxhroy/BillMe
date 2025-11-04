@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!--
+    LINT CONFIGURATION STRATEGY - PROGRESSIVE FIXES
+    
+    Goal: Fix warnings to improve code quality, security, and compatibility.
+    We've started fixing suppressible warnings while keeping external issues suppressed.
+    
+    FIXED WARNINGS (removed suppressions):
+    ✅ TypographyEllipsis (5) - Replaced ... with … in strings
+    ✅ ConstantLocale (2) - Removed toUpperCase/toLowerCase issues
+    ✅ ScopedStorage (1/2) - Updated AndroidManifest.xml for Android 13+
+    ✅ SimpleDateFormat (1/1 started) - Migrating to java.time.LocalDateTime
+    
+    REMAINING SUPPRESSIONS:
+    -->
+    
+    <!-- ==================== EXTERNAL LIBRARY ISSUES ==================== -->
+    
+    <!-- TrustAllX509TrustManager: In google-http-client dependency -->
+    <!-- ISSUE: Security concern with permissive SSL validation -->
+    <!-- TODO: Consider replacing with OkHttp for better security control -->
+    <issue id="TrustAllX509TrustManager" severity="ignore" />
+    
+    <!-- Aligned16KB: In native libraries from ML Kit and other dependencies -->
+    <!-- ISSUE: Cannot control native lib alignment in external AAR files -->
+    <!-- STATUS: Waiting for library maintainers to fix -->
+    <issue id="Aligned16KB" severity="ignore" />
+    
+    <!-- SelectedPhotoAccess: New Android 14+ behavior for photo picker -->
+    <!-- ISSUE: In library, will be fixed with AndroidX updates -->
+    <issue id="SelectedPhotoAccess" severity="ignore" />
+    
+    <!-- ==================== API REQUIREMENTS ==================== -->
+    
+    <!-- UnsafeOptInUsageError: For CameraX experimental API -->
+    <!-- REASON: Need to opt-in to ExperimentalGetImage for camera frame access -->
+    <issue id="UnsafeOptInUsageError">
+        <option name="opt-in" value="androidx.camera.core.ExperimentalGetImage" />
+    </issue>
+    
+    <!-- ==================== ISSUES ACTIVELY BEING FIXED ==================== -->
+    
+    <!-- UnusedResources (75): Being cleaned up in phases -->
+    <!-- DO NOT SUPPRESS - Fix instead! -->
+    
+    <!-- ModifierParameter (4): Compose best practice being implemented -->
+    <!-- DO NOT SUPPRESS - Fix instead! -->
+    
+    <!-- UseKtx (16): Being implemented for Kotlin idioms -->
+    <!-- DO NOT SUPPRESS - Fix instead! -->
+    
+    <!-- GradleDependency + NewerVersionAvailable (27): Being managed -->
+    <!-- DO NOT SUPPRESS - Fix instead! -->
+    
+    <!-- PluralsCandidate (1): Being reviewed -->
+    <!-- DO NOT SUPPRESS - Fix instead! -->
+    
+    <!-- OldTargetApi (1): Expected, targetSdk already at latest (35) -->
+    <!-- DO NOT SUPPRESS - Expected behavior -->
+    
+    <!-- ObsoleteSdkInt (1): Being reviewed and cleaned up -->
+    <!-- DO NOT SUPPRESS - Fix instead! -->
+    
+</lint>

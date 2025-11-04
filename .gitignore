@@ -1,0 +1,212 @@
+# ============================================================================
+# Android Development
+# ============================================================================
+
+# Gradle
+/.gradle
+/build
+/out
+**/build/
+.gradle/
+gradle-app.setting
+gradlew.bat
+
+# Local configuration
+/local.properties
+local.properties
+
+# Android-specific
+/.cxx/
+/.externalNativeBuild/
+captures/
+*.apk
+*.aar
+*.ap_
+*.dex
+
+# Android Studio
+/.idea/
+*.iml
+*.iws
+*.ipr
+*.iws
+.idea/
+workspace.xml
+*.jks
+*.keystore
+
+# IntelliJ IDEA
+out/
+.navigation/
+
+# Android NDK
+obj/
+
+# Android AVD
+avd/
+.android/
+
+# ============================================================================
+# Kotlin & Java
+# ============================================================================
+
+*.kotlin_module
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+
+# ============================================================================
+# IDE & Editor
+# ============================================================================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ============================================================================
+# Operating System
+# ============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Linux
+.nautilus-*
+.Trash-*
+
+# Windows
+Thumbs.db
+$RECYCLE.BIN/
+*.lnk
+
+# ============================================================================
+# Version Control
+# ============================================================================
+
+.git/
+.gitmodules
+
+# ============================================================================
+# Build & Compilation
+# ============================================================================
+
+# Compiled output
+*.o
+*.so
+*.a
+
+# Intermediate files
+*.bak
+*.tmp
+*.temp
+
+# ============================================================================
+# Generated Files
+# ============================================================================
+
+*/generated/
+**/generated/
+.generated/
+gen/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================================================
+# Logs & Reports
+# ============================================================================
+
+*.log
+*.logs
+test-results/
+reports/
+coverage/
+*.trace
+*.pid
+
+# ============================================================================
+# Package Manager & Dependencies
+# ============================================================================
+
+# Gradle dependencies cache
+.gradle/wrapper/dists/
+
+# Android SDK
+sdk/
+
+# ============================================================================
+# Secrets & Sensitive Data (IMPORTANT!)
+# ============================================================================
+
+# DO NOT COMMIT THESE FILES!
+*.keystore
+*.jks
+*.key
+*.pem
+.env
+.env.local
+.env.*.local
+secrets/
+private/
+credentials.json
+api_keys.txt
+**/secrets/**
+
+# ============================================================================
+# Docker
+# ============================================================================
+
+.dockerignore
+docker-compose.override.yml
+
+# ============================================================================
+# CI/CD
+# ============================================================================
+
+.github/workflows/secrets.yml
+.gitlab-ci.yml.bak
+
+# ============================================================================
+# Custom Project-specific
+# ============================================================================
+
+# Backup files
+*.bak
+*.backup
+~*
+
+# Temporary development files
+/temp/
+/tmp/
+.tmp/
+
+# User-specific preferences
+*.prefs
+.settings/
+
