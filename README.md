@@ -15,6 +15,25 @@
   </picture>
 </a>
 
+<a href="https://github.com/USERNAME/REPO/releases/latest/download/app-release.apk" target="_blank">
+  <svg xmlns="http://www.w3.org/2000/svg" width="210" height="48" viewBox="0 0 210 48">
+    <defs>
+      <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0" stop-color="#34d399"/>
+        <stop offset="1" stop-color="#10b981"/>
+      </linearGradient>
+    </defs>
+    <rect x="1" y="1" width="208" height="46" rx="12" fill="url(#g)"/>
+    <rect x="1" y="1" width="208" height="46" rx="12" fill="none" stroke="rgba(0,0,0,.12)"/>
+    <!-- simple arrow icon -->
+    <path d="M26 16 v10 h-6 l10 10 10-10 h-6 v-10 z" fill="white" opacity=".9"/>
+    <text x="90" y="30" fill="white" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="600" text-anchor="middle">
+      Download APK
+    </text>
+  </svg>
+</a>
+
+
 
 ### Modern Mobile Shop Management System
 
