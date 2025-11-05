@@ -271,7 +271,7 @@
 
 | Dashboard | Billing | Invoice History | Analytics |
 |-----------|---------|-----------|-----------|
-| <img src="http://avinas.me/wp-content/uploads/2025/11/1.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/2.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/4.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/3.png" width="200"/> |
+| <img src="http://avinas.me/wp-content/uploads/2025/11/1-1.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/3-1.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/4-1.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/2-1.png" width="200"/> |
 
 </div>
 
