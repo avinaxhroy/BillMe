@@ -1,6 +1,8 @@
 <div align="center">
+  
 
 # 📱 BillMe
+<img src="http://avinas.me/wp-content/uploads/2025/11/BillMe-1.png" alt="BillMe icon" width="100px"/>
 
 ### Modern Mobile Shop Management System
 
@@ -13,7 +15,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/avinaxhroy/BillMe?style=social)](https://github.com/avinaxhroy/BillMe)
 
 <p align="center">
-  <strong>🚀 Enterprise-grade Android mobile shop app with GST compliance, IMEI-aware inventory, ML Kit OCR, thermal printing, and professional invoice generation.</strong>
+  <strong>🚀Enterprise-grade Mobile Shop Management app for Android with GST compliance, IMEI-aware inventory, ML Kit OCR, thermal printing, and professional invoice generation that Simply Works</strong>
 </p>
 
 <p align="center">
@@ -27,7 +29,7 @@
   <a href="#-license">License</a>
 </p>
 
-<img src="https://via.placeholder.com/800x400/1976D2/FFFFFF?text=BillMe+Mobile+Shop+App" alt="BillMe Banner" width="100%"/>
+<img src="http://avinas.me/wp-content/uploads/2025/11/BillME.png" alt="BillMe Banner" width="100%"/>
 
 </div>
 
@@ -267,11 +269,9 @@
 
 <div align="center">
 
-| Dashboard | Billing | Inventory | Analytics |
+| Dashboard | Billing | Invoice History | Analytics |
 |-----------|---------|-----------|-----------|
-| <img src="https://via.placeholder.com/200x400/2196F3/FFFFFF?text=Dashboard" width="200"/> | <img src="https://via.placeholder.com/200x400/4CAF50/FFFFFF?text=Billing" width="200"/> | <img src="https://via.placeholder.com/200x400/FF9800/FFFFFF?text=Inventory" width="200"/> | <img src="https://via.placeholder.com/200x400/9C27B0/FFFFFF?text=Analytics" width="200"/> |
-
-*Replace these placeholders with actual app screenshots*
+| <img src="http://avinas.me/wp-content/uploads/2025/11/1-1.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/3-1.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/4-1.png" width="200"/> | <img src="http://avinas.me/wp-content/uploads/2025/11/2-1.png" width="200"/> |
 
 </div>
 
@@ -864,40 +864,7 @@ Need help? Here's how to get support:
 - [x] Database expansion (15 entities)
 - [x] Digital signature support
 - [x] Bilingual invoice support
-
-### Phase 3 � (In Progress - Q1 2025)
-- [ ] Google Drive cloud backup integration
-- [ ] Multi-language support (Hindi, Tamil, Bengali)
-- [ ] Dark mode enhancements
-- [ ] Bulk import/export (CSV, Excel)
-- [ ] SMS notifications for customers
-- [ ] WhatsApp Business integration
-- [ ] Advanced analytics dashboard
-- [ ] Predictive inventory management
-
-### Phase 4 🔮 (Planned - Q2-Q3 2025)
-- [ ] Multi-store management
-- [ ] Web dashboard portal
-- [ ] REST API for third-party integrations
-- [ ] Tablet-optimized interface
-- [ ] Advanced ML-based insights
-- [ ] Receipt customization templates
-- [ ] Email invoice delivery
-- [ ] Payment gateway integration
-- [ ] Barcode label printing
-- [ ] Supplier portal
-
-### Future Ideas 💭 (Beyond 2025)
-- [ ] Wear OS companion app
-- [ ] Widget support for quick actions
-- [ ] Voice commands (Google Assistant)
-- [ ] AI-powered pricing suggestions
-- [ ] Augmented reality product preview
-- [ ] Blockchain-based warranty tracking
-- [ ] IoT device integration
-- [ ] Advanced fraud detection
-- [ ] Cryptocurrency payment support
-
+- [x] Google Drive cloud backup integration
 ---
 
 ## 📊 Current Status
@@ -911,9 +878,7 @@ Need help? Here's how to get support:
 | Thermal Printing | ✅ Complete | 2.0.0 |
 | Backup & Restore | ✅ Complete | 2.0.0 |
 | Customer Analytics | ✅ Complete | 2.0.0 |
-| Cloud Backup | 🚧 In Progress | 2.1.0 |
-| Multi-language | 📅 Planned | 2.1.0 |
-| Multi-store | 📅 Planned | 3.0.0 |
+| Cloud Backup | ✅ Complete | 2.0.0 |
 
 ---
 
