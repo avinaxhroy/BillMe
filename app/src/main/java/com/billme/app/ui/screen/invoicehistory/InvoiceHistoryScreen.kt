@@ -1,11 +1,14 @@
 package com.billme.app.ui.screen.invoicehistory
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -56,24 +59,33 @@ fun InvoiceHistoryScreen(
     
     Scaffold(
         topBar = {
-            ModernLargeTopAppBar(
-                title = "Invoice History",
-                subtitle = "${invoices.size} invoices",
-                navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
-                onNavigationClick = onNavigateBack,
-                useGradient = true,
-                gradientColors = listOf(Secondary, SecondaryLight),
+            TopAppBar(
+                title = { 
+                    Column {
+                        Text(
+                            "Invoice History",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "${invoices.size} invoices • ₹${String.format("%.2f", state.totalAmount)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
                 actions = {
                     // Bulk Export Menu
                     var showBulkMenu by remember { mutableStateOf(false) }
                     
                     if (invoices.isNotEmpty()) {
                         IconButton(onClick = { showBulkMenu = true }) {
-                            Icon(
-                                Icons.Default.FileDownload,
-                                contentDescription = "Bulk Export",
-                                tint = Color.White
-                            )
+                            Icon(Icons.Default.FileDownload, contentDescription = "Bulk Export")
                         }
                         
                         DropdownMenu(
@@ -107,17 +119,13 @@ fun InvoiceHistoryScreen(
                         }
                     }
                     
-                    AnimatedIconButton(
-                        icon = Icons.AutoMirrored.Filled.Sort,
-                        onClick = { showSortMenu = true },
-                        contentDescription = "Sort"
-                    )
+                    IconButton(onClick = { showSortMenu = true }) {
+                        Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort")
+                    }
                     
-                    AnimatedIconButton(
-                        icon = Icons.Default.DeleteSweep,
-                        onClick = { showDeleteAllDialog = true },
-                        contentDescription = "Delete Old"
-                    )
+                    IconButton(onClick = { showDeleteAllDialog = true }) {
+                        Icon(Icons.Default.DeleteSweep, contentDescription = "Delete Old")
+                    }
                     
                     DropdownMenu(
                         expanded = showSortMenu,
@@ -196,318 +204,349 @@ fun InvoiceHistoryScreen(
                             }
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .background(MaterialTheme.colorScheme.background),
+            contentPadding = PaddingValues(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             
+            // Statistics Cards Section
+            item {
+                InvoiceStatisticsCards(
+                    totalInvoices = state.filteredInvoices.size,
+                    totalAmount = state.totalAmount,
+                    paidCount = state.filteredInvoices.count { it.paymentStatus.equals("paid", ignoreCase = true) },
+                    pendingCount = state.filteredInvoices.count { it.paymentStatus.equals("pending", ignoreCase = true) }
+                )
+            }
+            
             // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = viewModel::setSearchQuery,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                placeholder = { Text("Search by transaction number or date...") },
-                leadingIcon = { Icon(Icons.Default.Search, "Search") },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                            Icon(Icons.Default.Clear, "Clear")
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = viewModel::setSearchQuery,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    placeholder = { Text("Search by transaction number or date...") },
+                    leadingIcon = { Icon(Icons.Default.Search, "Search") },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                                Icon(Icons.Default.Clear, "Clear")
+                            }
                         }
-                    }
-                },
-                singleLine = true
-            )
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
+                )
+            }
             
             // Bulk Export Progress Indicator
             if (state.isBulkExporting) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Exporting Invoices...",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                "${state.bulkExportProgress}/${state.bulkExportTotal}",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                        
-                        LinearProgressIndicator(
-                            progress = { 
-                                if (state.bulkExportTotal > 0) {
-                                    state.bulkExportProgress.toFloat() / state.bulkExportTotal
-                                } else 0f
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 4.dp
                         )
-                        
-                        if (!state.bulkExportMessage.isNullOrEmpty()) {
-                            Text(
-                                text = state.bulkExportMessage ?: "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "Exporting Invoices...",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    "${state.bulkExportProgress}/${state.bulkExportTotal}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            
+                            LinearProgressIndicator(
+                                progress = { 
+                                    if (state.bulkExportTotal > 0) {
+                                        state.bulkExportProgress.toFloat() / state.bulkExportTotal
+                                    } else 0f
+                                },
+                                modifier = Modifier.fillMaxWidth()
                             )
+                            
+                            if (!state.bulkExportMessage.isNullOrEmpty()) {
+                                Text(
+                                    text = state.bulkExportMessage ?: "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
                     }
                 }
             }
             
             // Advanced Filters Toggle Button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(
-                    onClick = { viewModel.toggleAdvancedFilters() }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        if (state.showAdvancedFilters) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = null
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text("Advanced Filters")
-                }
-                
-                if (state.filteredInvoices.isNotEmpty()) {
-                    Text(
-                        "${state.filteredInvoices.size} invoices • Total: ₹${String.format("%.2f", state.totalAmount)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
+                    TextButton(
+                        onClick = { viewModel.toggleAdvancedFilters() }
+                    ) {
+                        Icon(
+                            if (state.showAdvancedFilters) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("Advanced Filters")
+                    }
                 }
             }
             
             // Advanced Filters Panel
-            AnimatedVisibility(visible = state.showAdvancedFilters) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            "Advanced Filters",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
+            item {
+                AnimatedVisibility(visible = state.showAdvancedFilters) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 2.dp
                         )
-                        
-                        // Amount Range Filter
-                        Column {
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
                             Text(
-                                "Amount Range: ₹${state.minAmount.toInt()} - ₹${state.maxAmount.toInt()}",
-                                style = MaterialTheme.typography.bodySmall
+                                "Advanced Filters",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
                             )
+                            
+                            // Amount Range Filter
+                            Column {
+                                Text(
+                                    "Amount Range: ₹${state.minAmount.toInt()} - ₹${state.maxAmount.toInt()}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = state.minAmount.toInt().toString(),
+                                        onValueChange = { 
+                                            it.toDoubleOrNull()?.let { min -> 
+                                                viewModel.setAmountRange(min, state.maxAmount) 
+                                            }
+                                        },
+                                        label = { Text("Min") },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true
+                                    )
+                                    OutlinedTextField(
+                                        value = state.maxAmount.toInt().toString(),
+                                        onValueChange = { 
+                                            it.toDoubleOrNull()?.let { max -> 
+                                                viewModel.setAmountRange(state.minAmount, max) 
+                                            }
+                                        },
+                                        label = { Text("Max") },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true
+                                    )
+                                }
+                            }
+                            
+                            // Customer Name Filter
+                            OutlinedTextField(
+                                value = state.selectedCustomerFilter,
+                                onValueChange = { viewModel.setCustomerFilter(it) },
+                                label = { Text("Customer Name") },
+                                placeholder = { Text("Filter by customer...") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
+                            )
+                            
+                            // Payment Status Filter
+                            Column {
+                                Text(
+                                    "Payment Status",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    item {
+                                        FilterChip(
+                                            selected = state.selectedPaymentStatus == PaymentStatusFilter.ALL,
+                                            onClick = { viewModel.setPaymentStatusFilter(PaymentStatusFilter.ALL) },
+                                            label = { Text("All") }
+                                        )
+                                    }
+                                    item {
+                                        FilterChip(
+                                            selected = state.selectedPaymentStatus == PaymentStatusFilter.PAID,
+                                            onClick = { viewModel.setPaymentStatusFilter(PaymentStatusFilter.PAID) },
+                                            label = { Text("Paid") }
+                                        )
+                                    }
+                                    item {
+                                        FilterChip(
+                                            selected = state.selectedPaymentStatus == PaymentStatusFilter.PENDING,
+                                            onClick = { viewModel.setPaymentStatusFilter(PaymentStatusFilter.PENDING) },
+                                            label = { Text("Pending") }
+                                        )
+                                    }
+                                    item {
+                                        FilterChip(
+                                            selected = state.selectedPaymentStatus == PaymentStatusFilter.PARTIAL,
+                                            onClick = { viewModel.setPaymentStatusFilter(PaymentStatusFilter.PARTIAL) },
+                                            label = { Text("Partial") }
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            // Clear Filters Button
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.End
                             ) {
-                                OutlinedTextField(
-                                    value = state.minAmount.toInt().toString(),
-                                    onValueChange = { 
-                                        it.toDoubleOrNull()?.let { min -> 
-                                            viewModel.setAmountRange(min, state.maxAmount) 
-                                        }
-                                    },
-                                    label = { Text("Min") },
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true
-                                )
-                                OutlinedTextField(
-                                    value = state.maxAmount.toInt().toString(),
-                                    onValueChange = { 
-                                        it.toDoubleOrNull()?.let { max -> 
-                                            viewModel.setAmountRange(state.minAmount, max) 
-                                        }
-                                    },
-                                    label = { Text("Max") },
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true
-                                )
-                            }
-                        }
-                        
-                        // Customer Name Filter
-                        OutlinedTextField(
-                            value = state.selectedCustomerFilter,
-                            onValueChange = { viewModel.setCustomerFilter(it) },
-                            label = { Text("Customer Name") },
-                            placeholder = { Text("Filter by customer...") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
-                        )
-                        
-                        // Payment Status Filter
-                        Column {
-                            Text(
-                                "Payment Status",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                item {
-                                    FilterChip(
-                                        selected = state.selectedPaymentStatus == PaymentStatusFilter.ALL,
-                                        onClick = { viewModel.setPaymentStatusFilter(PaymentStatusFilter.ALL) },
-                                        label = { Text("All") }
-                                    )
+                                TextButton(onClick = { viewModel.clearAllFilters() }) {
+                                    Icon(Icons.Default.Clear, contentDescription = null)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Clear All Filters")
                                 }
-                                item {
-                                    FilterChip(
-                                        selected = state.selectedPaymentStatus == PaymentStatusFilter.PAID,
-                                        onClick = { viewModel.setPaymentStatusFilter(PaymentStatusFilter.PAID) },
-                                        label = { Text("Paid") }
-                                    )
-                                }
-                                item {
-                                    FilterChip(
-                                        selected = state.selectedPaymentStatus == PaymentStatusFilter.PENDING,
-                                        onClick = { viewModel.setPaymentStatusFilter(PaymentStatusFilter.PENDING) },
-                                        label = { Text("Pending") }
-                                    )
-                                }
-                                item {
-                                    FilterChip(
-                                        selected = state.selectedPaymentStatus == PaymentStatusFilter.PARTIAL,
-                                        onClick = { viewModel.setPaymentStatusFilter(PaymentStatusFilter.PARTIAL) },
-                                        label = { Text("Partial") }
-                                    )
-                                }
-                            }
-                        }
-                        
-                        // Clear Filters Button
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(onClick = { viewModel.clearAllFilters() }) {
-                                Icon(Icons.Default.Clear, contentDescription = null)
-                                Spacer(Modifier.width(4.dp))
-                                Text("Clear All Filters")
                             }
                         }
                     }
                 }
-                Spacer(Modifier.height(8.dp))
             }
             
             // Filter Chips
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    FilterChip(
-                        selected = currentFilter == FilterType.ALL,
-                        onClick = { viewModel.setFilter(FilterType.ALL) },
-                        label = { Text("All") }
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = currentFilter == FilterType.CUSTOMER,
-                        onClick = { viewModel.setFilter(FilterType.CUSTOMER) },
-                        label = { Text("Customer Invoices") }
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = currentFilter == FilterType.OWNER,
-                        onClick = { viewModel.setFilter(FilterType.OWNER) },
-                        label = { Text("Owner Invoices") }
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = currentFilter == FilterType.TODAY,
-                        onClick = { viewModel.setFilter(FilterType.TODAY) },
-                        label = { Text("Today") },
-                        leadingIcon = { Icon(Icons.Default.Today, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = currentFilter == FilterType.THIS_WEEK,
-                        onClick = { viewModel.setFilter(FilterType.THIS_WEEK) },
-                        label = { Text("This Week") },
-                        leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = currentFilter == FilterType.THIS_MONTH,
-                        onClick = { viewModel.setFilter(FilterType.THIS_MONTH) },
-                        label = { Text("This Month") },
-                        leadingIcon = { Icon(Icons.Default.Event, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                    )
+            item {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        FilterChip(
+                            selected = currentFilter == FilterType.ALL,
+                            onClick = { viewModel.setFilter(FilterType.ALL) },
+                            label = { Text("All") }
+                        )
+                    }
+                    item {
+                        FilterChip(
+                            selected = currentFilter == FilterType.CUSTOMER,
+                            onClick = { viewModel.setFilter(FilterType.CUSTOMER) },
+                            label = { Text("Customer Invoices") }
+                        )
+                    }
+                    item {
+                        FilterChip(
+                            selected = currentFilter == FilterType.OWNER,
+                            onClick = { viewModel.setFilter(FilterType.OWNER) },
+                            label = { Text("Owner Invoices") }
+                        )
+                    }
+                    item {
+                        FilterChip(
+                            selected = currentFilter == FilterType.TODAY,
+                            onClick = { viewModel.setFilter(FilterType.TODAY) },
+                            label = { Text("Today") },
+                            leadingIcon = { Icon(Icons.Default.Today, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        )
+                    }
+                    item {
+                        FilterChip(
+                            selected = currentFilter == FilterType.THIS_WEEK,
+                            onClick = { viewModel.setFilter(FilterType.THIS_WEEK) },
+                            label = { Text("This Week") },
+                            leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        )
+                    }
+                    item {
+                        FilterChip(
+                            selected = currentFilter == FilterType.THIS_MONTH,
+                            onClick = { viewModel.setFilter(FilterType.THIS_MONTH) },
+                            label = { Text("This Month") },
+                            leadingIcon = { Icon(Icons.Default.Event, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        )
+                    }
                 }
             }
             
-            Spacer(Modifier.height(16.dp))
-            
             // Invoice List
             if (invoices.isEmpty()) {
-                EmptyStateView(
-                    hasSearchQuery = searchQuery.isNotEmpty(),
-                    hasFilter = currentFilter != FilterType.ALL
-                )
+                item {
+                    EmptyStateView(
+                        hasSearchQuery = searchQuery.isNotEmpty(),
+                        hasFilter = currentFilter != FilterType.ALL
+                    )
+                }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(
-                        items = invoices,
-                        key = { it.file.absolutePath }
-                    ) { invoice ->
-                        InvoiceCard(
+                items(
+                    items = invoices,
+                    key = { it.file.absolutePath }
+                ) { invoice ->
+                    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        ModernInvoiceCard(
                             invoice = invoice,
                             onShareClick = { viewModel.shareInvoice(invoice) },
                             onDeleteClick = { invoiceToDelete = invoice },
                             onInvoiceClick = { viewModel.viewInvoice(invoice) }
                         )
                     }
+                }
+                
+                // Bottom padding
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
@@ -545,6 +584,408 @@ fun InvoiceHistoryScreen(
                 showDeleteAllDialog = false
             }
         )
+    }
+}
+
+@Composable
+private fun InvoiceStatisticsCards(
+    totalInvoices: Int,
+    totalAmount: Double,
+    paidCount: Int,
+    pendingCount: Int
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Main total card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = if (isSystemInDarkTheme()) 8.dp else 4.dp
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Total Revenue",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "₹${String.format("%,.2f", totalAmount)}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        "$totalInvoices invoices",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+                
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Receipt,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+            }
+        }
+        
+        // Payment status cards row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Paid Card
+            Card(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = if (isSystemInDarkTheme()) 6.dp else 3.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            "Paid",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                    Text(
+                        "$paidCount",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+            }
+            
+            // Pending Card
+            Card(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = if (isSystemInDarkTheme()) 6.dp else 3.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            "Pending",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                    Text(
+                        "$pendingCount",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModernInvoiceCard(
+    invoice: InvoiceFile,
+    onShareClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onInvoiceClick: () -> Unit
+) {
+    val isDarkTheme = isSystemInDarkTheme()
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onInvoiceClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isDarkTheme) 6.dp else 3.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Header Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                // Left side - Transaction info
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Invoice type indicator
+                        Surface(
+                            shape = CircleShape,
+                            color = when (invoice.type) {
+                                InvoiceType.CUSTOMER -> MaterialTheme.colorScheme.primary
+                                InvoiceType.OWNER -> MaterialTheme.colorScheme.secondary
+                            },
+                            modifier = Modifier.size(8.dp)
+                        ) {}
+                        
+                        Text(
+                            invoice.transactionNumber,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            invoice.formattedDate,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    // Customer name if available
+                    if (invoice.customerName.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                invoice.customerName,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+                
+                // Right side - Amount and status
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (invoice.amount > 0.0) {
+                        Text(
+                            "₹${String.format("%,.2f", invoice.amount)}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    
+                    // Payment Status Badge
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = when (invoice.paymentStatus.lowercase()) {
+                            "paid" -> MaterialTheme.colorScheme.tertiaryContainer
+                            "pending" -> MaterialTheme.colorScheme.secondaryContainer
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                when (invoice.paymentStatus.lowercase()) {
+                                    "paid" -> Icons.Default.CheckCircle
+                                    "pending" -> Icons.Default.Schedule
+                                    else -> Icons.Default.Info
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = when (invoice.paymentStatus.lowercase()) {
+                                    "paid" -> MaterialTheme.colorScheme.tertiary
+                                    "pending" -> MaterialTheme.colorScheme.secondary
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                            Text(
+                                invoice.paymentStatus,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                                color = when (invoice.paymentStatus.lowercase()) {
+                                    "paid" -> MaterialTheme.colorScheme.onTertiaryContainer
+                                    "pending" -> MaterialTheme.colorScheme.onSecondaryContainer
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 12.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
+            
+            // Bottom Row - Type, Size, and Actions
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Invoice type and size
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Invoice Type Badge
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = when (invoice.type) {
+                            InvoiceType.CUSTOMER -> MaterialTheme.colorScheme.primaryContainer
+                            InvoiceType.OWNER -> MaterialTheme.colorScheme.secondaryContainer
+                        }
+                    ) {
+                        Text(
+                            invoice.type.name,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = when (invoice.type) {
+                                InvoiceType.CUSTOMER -> MaterialTheme.colorScheme.onPrimaryContainer
+                                InvoiceType.OWNER -> MaterialTheme.colorScheme.onSecondaryContainer
+                            }
+                        )
+                    }
+                    
+                    // File size
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Description,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            invoice.fileSize,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
+                // Action Buttons
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    IconButton(
+                        onClick = onShareClick,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Share",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    
+                    IconButton(
+                        onClick = onDeleteClick,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

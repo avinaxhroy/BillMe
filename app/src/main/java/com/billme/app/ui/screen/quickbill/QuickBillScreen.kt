@@ -1288,6 +1288,18 @@ fun EnhancedPaymentButtons(
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("UPI")
             }
+            
+            OutlinedButton(
+                onClick = { onPaymentSelected(com.billme.app.data.local.entity.PaymentMethod.EMI) },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp),
+                enabled = enabled
+            ) {
+                Icon(Icons.Default.AccountBalance, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("EMI")
+            }
         }
     }
 }

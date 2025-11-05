@@ -66,14 +66,15 @@ object HindiTransliterator {
         "chch" to "च्च", "kshh" to "क्ष्", "shri" to "श्री", "shre" to "श्रे",
         
         // Special conjunct consonants (3 chars) - highest priority
-        "chh" to "छ", "ksh" to "क्ष", "shh" to "श", "jny" to "ज्ञ",
+        "chh" to "छ", "ksh" to "क्ष", "shh" to "श", "jny" to "ज्ञ", "gya" to "ज्ञ",
         "thr" to "थ्र", "dhr" to "ध्र", "shr" to "श्र", "ttr" to "त्त्र",
         "ngh" to "ङ्घ", "nch" to "ञ्च", "njh" to "ञ्झ", "nth" to "न्थ", 
         "ndh" to "न्ध", "ndr" to "न्द्र", "mph" to "म्फ", "mbh" to "म्भ",
+        "ggh" to "ग्घ", "ggr" to "ग्र",
         
         // 2-character consonants - aspirated and conjuncts - IMPROVED
-        // Velar (कवर्ग)
-        "kh" to "ख", "gh" to "घ", "ng" to "ङ", "nk" to "ङ्क",
+        // Velar (कवर्ग) - BETTER 'g' HANDLING
+        "kh" to "ख", "gh" to "घ", "ng" to "ङ", "nk" to "ङ्क", "gg" to "ग्ग",
         
         // Palatal (चवर्ग)
         "ch" to "च", "jh" to "झ", "ny" to "ञ", "nc" to "ञ्च",
@@ -90,13 +91,13 @@ object HindiTransliterator {
         // Sibilants and special - IMPROVED
         "sh" to "श", "ss" to "स्स", "ts" to "ट्स", "ds" to "ड्स",
         
-        // Conjuncts and common combinations - EXPANDED
+        // Conjuncts and common combinations - EXPANDED with better 'g' support
         "tr" to "त्र", "dr" to "द्र", "kr" to "क्र", "gr" to "ग्र",
         "pr" to "प्र", "br" to "ब्र", "fr" to "फ्र", "vr" to "व्र",
-        "gy" to "ज्ञ", "gn" to "ज्ञ",
+        "gy" to "ग्य", "gn" to "ग्न",
         "ld" to "ल्ड", "lt" to "ल्ट", "ll" to "ल्ल",
         "rk" to "र्क", "rt" to "र्त", "rd" to "र्द", "rp" to "र्प", "rm" to "र्म",
-        "rn" to "र्ण", "rv" to "र्व", "ry" to "र्य",
+        "rn" to "र्ण", "rv" to "र्व", "ry" to "र्य", "rg" to "र्ग",
         "st" to "स्त", "sk" to "स्क", "sp" to "स्प", "sm" to "स्म", "sn" to "स्न", "sv" to "स्व",
         "str" to "स्त्र", "sth" to "स्थ",
         "ks" to "क्स", "kt" to "क्त", "kn" to "क्न", "kl" to "क्ल", "kv" to "क्व", "ky" to "क्य",
@@ -107,15 +108,15 @@ object HindiTransliterator {
         "ly" to "ल्य", "lv" to "ल्व", "ln" to "ल्न",
         "vy" to "व्य", "vv" to "व्व",
         "by" to "ब्य", "bj" to "ब्ज",
-        "ny" to "न्य", "nv" to "न्व",
-        "gy" to "ग्य", "gv" to "ग्व",
-        "jy" to "ज्य", "jv" to "ज्व",
+        "ny" to "न्य", "nv" to "न्व", "ng" to "ङ्ग",
+        "gv" to "ग्व", "gd" to "ग्ड", "gt" to "ग्त", "gm" to "ग्म",
+        "jy" to "ज्य", "jv" to "ज्व", "jn" to "ज्ञ",
         
         // Nasal combinations - NEW
-        "nn" to "न्न", "ng" to "ङ", "nj" to "ञ्ज",
+        "nn" to "न्न", "nj" to "ञ्ज",
         
         // Single consonants - basic व्यंजन
-        // Velars
+        // Velars - BETTER 'g' (ग) HANDLING
         "k" to "क", "g" to "ग",
         
         // Palatals
@@ -167,8 +168,9 @@ object HindiTransliterator {
         "shastri" to "शास्त्री", "sastri" to "शास्त्री", "shashtri" to "शास्त्री",
         "ray" to "राय", "rai" to "राय", "rao" to "राव", "rао" to "राव",
         "agarwal" to "अग्रवाल", "aggarwal" to "अग्रवाल",
+        "ganguly" to "गांगुली", "gill" to "गिल", "grover" to "ग्रोवर",
         
-        // Common first names - Male - EXPANDED with proper long/short 'a'
+        // Common first names - Male - EXPANDED with proper long/short 'a' and better 'g' handling
         "rajesh" to "राजेश", "ramesh" to "रमेश", "suresh" to "सुरेश", "mahesh" to "महेश",
         "dinesh" to "दिनेश", "ganesh" to "गणेश", "prakash" to "प्रकाश",
         "anil" to "अनिल", "sunil" to "सुनील", "manoj" to "मनोज", "sanjay" to "संजय",
@@ -198,6 +200,11 @@ object HindiTransliterator {
         "kartikeya" to "कार्तिकेय", "siddharth" to "सिद्धार्थ", "gaurav" to "गौरव",
         "harsh" to "हर्ष", "yash" to "यश", "aditya" to "आदित्य", "aryan" to "आर्यन",
         "chirag" to "चिराग", "tushar" to "तुषार", "shivam" to "शिवम", "ankit" to "अंकित",
+        // Names with 'g' (ग) - BETTER HANDLING
+        "gautam" to "गौतम", "gopal" to "गोपाल", "gagan" to "गगन", "gaurav" to "गौरव",
+        "gokul" to "गोकुल", "girish" to "गिरीश", "ghanshyam" to "घनश्याम",
+        "gajendra" to "गजेंद्र", "giridhar" to "गिरिधर", "ganeshan" to "गणेशन",
+        "gunjan" to "गुंजन", "gulshan" to "गुलशन", "giriraj" to "गिरिराज",
         
         // Common first names - Female - EXPANDED
         "priya" to "प्रिया", "kavita" to "कविता", "sunita" to "सुनीता",
@@ -220,12 +227,16 @@ object HindiTransliterator {
         "aishwarya" to "ऐश्वर्या", "sonali" to "सोनाली", "kiran" to "किरण",
         "meera" to "मीरा", "alka" to "अल्का", "anupama" to "अनुपमा",
         "shilpa" to "शिल्पा", "varsha" to "वर्षा", "nandini" to "नंदिनी",
+        // Female names with 'g' (ग)
+        "gauri" to "गौरी", "gita" to "गीता", "garima" to "गरिमा", "gayatri" to "गायत्री",
+        "gunjan" to "गुंजन", "geeta" to "गीता", "ganga" to "गंगा",
         
         // Religious/mythological names
         "krishna" to "कृष्ण", "rama" to "राम", "shiva" to "शिव", "vishnu" to "विष्णु",
         "hanuman" to "हनुमान", "ganesh" to "गणेश", "brahma" to "ब्रह्मा",
         "lakshmi" to "लक्ष्मी", "saraswati" to "सरस्वती", "durga" to "दुर्गा",
         "parvati" to "पार्वती", "kali" to "काली", "sita" to "सीता",
+        "ganesha" to "गणेश", "ganapati" to "गणपति",
         
         // Major Indian cities
         "delhi" to "दिल्ली", "mumbai" to "मुंबई", "kolkata" to "कोलकाता",
@@ -238,6 +249,8 @@ object HindiTransliterator {
         "varanasi" to "वाराणसी", "amritsar" to "अमृतसर", "allahabad" to "इलाहाबाद",
         "prayagraj" to "प्रयागराज", "meerut" to "मेरठ", "rajkot" to "राजकोट",
         "gwalior" to "ग्वालियर", "vijayawada" to "विजयवाड़ा",
+        "gurgaon" to "गुड़गांव", "gurugram" to "गुरुग्राम", "goa" to "गोवा",
+        "gangtok" to "गंगटोक", "gandhinagar" to "गांधीनगर",
         
         // Indian states
         "maharashtra" to "महाराष्ट्र", "gujarat" to "गुजरात", "rajasthan" to "राजस्थान",
@@ -245,6 +258,7 @@ object HindiTransliterator {
         "madhyapradesh" to "मध्यप्रदेश", "bihar" to "बिहार", "bengal" to "बंगाल",
         "karnataka" to "कर्नाटक", "tamilnadu" to "तमिलनाडु", "kerala" to "केरल",
         "odisha" to "ओडिशा", "jharkhand" to "झारखंड", "assam" to "असम",
+        "goa" to "गोवा",
         
         // Common words and terms - GREATLY EXPANDED
         "bharat" to "भारत", "india" to "इंडिया", "hindustan" to "हिंदुस्तान",
@@ -254,6 +268,7 @@ object HindiTransliterator {
         "road" to "रोड", "street" to "स्ट्रीट", "colony" to "कॉलोनी",
         "bazar" to "बाजार", "market" to "मार्केट", "shop" to "शॉप",
         "mobile" to "मोबाइल", "phone" to "फोन", "computer" to "कंप्यूटर",
+        "gram" to "ग्राम", "gaon" to "गांव", "gali" to "गली",
         
         // Address components - NEW
         "house" to "मकान", "flat" to "फ्लैट", "apartment" to "अपार्टमेंट",
@@ -263,6 +278,7 @@ object HindiTransliterator {
         "phase" to "फेज", "block" to "ब्लॉक", "plot" to "प्लॉट",
         "near" to "के पास", "behind" to "के पीछे", "opposite" to "के सामने",
         "behind" to "पीछे", "front" to "सामने", "beside" to "बगल में",
+        "gate" to "गेट", "garden" to "बाग", "ground" to "मैदान",
         
         // Directions - NEW
         "north" to "उत्तर", "south" to "दक्षिण", "east" to "पूर्व", "west" to "पश्चिम",
@@ -276,6 +292,7 @@ object HindiTransliterator {
         "garden" to "बाग", "mall" to "मॉल", "cinema" to "सिनेमा",
         "hotel" to "होटल", "restaurant" to "रेस्टोरेंट", "bank" to "बैंक",
         "office" to "कार्यालय", "company" to "कंपनी", "factory" to "फैक्ट्री",
+        "gurudwara" to "गुरुद्वारा", "garage" to "गैराज",
         
         // Honorifics and titles - NEW
         "mr" to "श्री", "mrs" to "श्रीमती", "miss" to "कुमारी",
@@ -285,6 +302,7 @@ object HindiTransliterator {
         // Family relations - NEW
         "father" to "पिता", "mother" to "माता", "son" to "पुत्र", "daughter" to "पुत्री",
         "brother" to "भाई", "sister" to "बहन", "wife" to "पत्नी", "husband" to "पति",
+        "grandfather" to "दादा", "grandmother" to "दादी",
         
         // Common adjectives - NEW
         "new" to "नया", "old" to "पुराना", "big" to "बड़ा", "small" to "छोटा",
@@ -361,6 +379,25 @@ object HindiTransliterator {
         "priya" to "priya", "priyaa" to "priya", "pria" to "priya",
         "neha" to "neha", "nehaa" to "neha", "neaha" to "neha",
         
+        // Names with 'g' (ग) - BETTER HANDLING
+        "ganesh" to "ganesh", "gansh" to "ganesh", "ganesha" to "ganesh", "ganapati" to "ganapati",
+        "gautam" to "gautam", "gotam" to "gautam", "gautama" to "gautam", "gotham" to "gautam",
+        "gopal" to "gopal", "gopaal" to "gopal", "gopala" to "gopal",
+        "gagan" to "gagan", "gagn" to "gagan", "gaagan" to "gagan",
+        "gaurav" to "gaurav", "gorav" to "gaurav", "gaurav" to "gaurav",
+        "gauri" to "gauri", "gouri" to "gauri", "gowri" to "gauri",
+        "gita" to "gita", "geeta" to "geeta", "geetha" to "geeta",
+        "garima" to "garima", "gareema" to "garima",
+        "gayatri" to "gayatri", "gayatree" to "gayatri", "gayathri" to "gayatri",
+        "girish" to "girish", "gireesh" to "girish", "giresh" to "girish",
+        "gunjan" to "gunjan", "gunjan" to "gunjan", "gunjana" to "gunjan",
+        "gokul" to "gokul", "gokula" to "gokul", "gokulam" to "gokul",
+        "ganga" to "ganga", "gangaa" to "ganga", "ganga" to "ganga",
+        "gulshan" to "gulshan", "gulshan" to "gulshan",
+        "gill" to "gill", "gil" to "gill",
+        "grover" to "grover", "grovar" to "grover",
+        "ganguly" to "ganguly", "ganguli" to "ganguly", "ganguli" to "ganguly",
+        
         // Common misspellings - Cities
         "delhi" to "delhi", "dilli" to "delhi", "dehli" to "delhi", "deli" to "delhi",
         "mumbai" to "mumbai", "bombay" to "mumbai", "mubai" to "mumbai", "mumbay" to "mumbai",
@@ -370,6 +407,13 @@ object HindiTransliterator {
         "hyderabad" to "hyderabad", "hydrabad" to "hyderabad", "haidarabad" to "hyderabad",
         "pune" to "pune", "poona" to "pune", "punee" to "pune",
         "jaipur" to "jaipur", "jaypur" to "jaipur", "jaipurr" to "jaipur",
+        "gurgaon" to "gurgaon", "gurgoan" to "gurgaon", "gurugram" to "gurugram",
+        "gwalior" to "gwalior", "gwaliar" to "gwalior", "gwalior" to "gwalior",
+        "gandhinagar" to "gandhinagar", "gandinagar" to "gandhinagar",
+        "gangtok" to "gangtok", "gangtak" to "gangtok",
+        
+        // States with 'g'
+        "gujarat" to "gujarat", "gujrat" to "gujarat", "gujarath" to "gujarat",
         
         // Address terms
         "nagar" to "nagar", "nagr" to "nagar", "nagarr" to "nagar", "ngr" to "nagar",
@@ -378,6 +422,13 @@ object HindiTransliterator {
         "colony" to "colony", "coloni" to "colony", "collony" to "colony",
         "market" to "market", "markit" to "market", "mrkt" to "market",
         "gali" to "gali", "galii" to "gali", "galee" to "gali",
+        "gate" to "gate", "gat" to "gate", "gaate" to "gate",
+        "garden" to "garden", "gardan" to "garden", "gardenn" to "garden",
+        "ground" to "ground", "graund" to "ground", "groundd" to "ground",
+        "garage" to "garage", "garaj" to "garage", "garrage" to "garage",
+        "gram" to "gram", "graam" to "gram", "gm" to "gram",
+        "gaon" to "gaon", "goan" to "gaon", "gaaon" to "gaon",
+        "gurudwara" to "gurudwara", "gurudwara" to "gurudwara", "gurdwara" to "gurudwara",
         
         // Phonetic variations
         "charan" to "charan", "charane" to "charan", "charann" to "charan", "chran" to "charan",
@@ -389,7 +440,14 @@ object HindiTransliterator {
         "sunil" to "sunil", "sunill" to "sunil", "suneel" to "sunil",
         "anil" to "anil", "anill" to "anil", "aneel" to "anil",
         "geeta" to "geeta", "gita" to "geeta", "geetha" to "geeta",
-        "sita" to "sita", "sitha" to "sita", "sitaa" to "sita"
+        "sita" to "sita", "sitha" to "sita", "sitaa" to "sita",
+        
+        // More 'g' related corrections
+        "govind" to "govind", "gobind" to "govind", "govinda" to "govind",
+        "ghanshyam" to "ghanshyam", "ghanshyaam" to "ghanshyam", "ghanashyam" to "ghanshyam",
+        "gajendra" to "gajendra", "gajender" to "gajendra", "gajindra" to "gajendra",
+        "giridhar" to "giridhar", "giridhaara" to "giridhar", "gireedhara" to "giridhar",
+        "giriraj" to "giriraj", "giriraaj" to "giriraj", "giriraj" to "giriraj"
     )
     
     /**
@@ -445,25 +503,44 @@ object HindiTransliterator {
     /**
      * Transliterate full name with intelligent word separation
      * Handles: "Rajesh Kumar" -> "राजेश कुमार" with proper spacing
+     * IMPROVED: Better whitespace preservation and handling
      */
     fun transliterateFullName(fullName: String): String {
         if (fullName.isBlank()) return fullName
         
-        // Split by whitespace but preserve multiple spaces
-        val parts = fullName.split(Regex("(\\s+)"))
         val result = StringBuilder()
+        var i = 0
         
-        for (part in parts) {
-            if (part.matches(Regex("\\s+"))) {
-                // Preserve whitespace
-                result.append(part)
-            } else if (part.isNotBlank()) {
-                // Transliterate word
-                val lowerWord = part.lowercase()
-                val correctedWord = typoCorrections[lowerWord] ?: lowerWord
-                val transliterated = nameCorrections[correctedWord] 
-                    ?: transliterateWord(part)
-                result.append(transliterated)
+        while (i < fullName.length) {
+            when {
+                // Preserve whitespace exactly as-is (including multiple spaces, tabs, etc.)
+                fullName[i].isWhitespace() -> {
+                    result.append(fullName[i])
+                    i++
+                }
+                // Preserve digits and special characters
+                !fullName[i].isLetter() -> {
+                    result.append(fullName[i])
+                    i++
+                }
+                // Transliterate alphabetic words
+                else -> {
+                    val wordStart = i
+                    while (i < fullName.length && fullName[i].isLetter()) {
+                        i++
+                    }
+                    val word = fullName.substring(wordStart, i)
+                    val lowerWord = word.lowercase()
+                    
+                    // Auto-correct typos first
+                    val correctedWord = typoCorrections[lowerWord] ?: lowerWord
+                    
+                    // Check dictionary (case-insensitive)
+                    val transliterated = nameCorrections[correctedWord] 
+                        ?: transliterateWord(word)
+                    
+                    result.append(transliterated)
+                }
             }
         }
         
@@ -993,23 +1070,37 @@ object HindiTransliterator {
     
     /**
      * Check if word has common Indian name phonetic patterns
+     * IMPROVED: Better detection including 'g' names
      */
     private fun hasCommonPhoneticPatterns(word: String): Boolean {
         val lowerWord = word.lowercase()
-        return lowerWord.endsWith("esh") ||  // Rajesh, Mahesh, etc.
-               lowerWord.endsWith("an") ||   // Raman, Kiran, etc.
+        return lowerWord.endsWith("esh") ||  // Rajesh, Mahesh, Ganesh, etc.
+               lowerWord.endsWith("an") ||   // Raman, Kiran, Gagan, etc.
                lowerWord.endsWith("ar") ||   // Kumar, Shankar, etc.
                lowerWord.endsWith("deep") || // Pradeep, Sandeep, etc.
-               lowerWord.endsWith("sh") ||   // Ashish, Harish, etc.
+               lowerWord.endsWith("sh") ||   // Ashish, Harish, Girish, etc.
                lowerWord.endsWith("it") ||   // Amit, Rohit, etc.
                lowerWord.endsWith("vi") ||   // Ravi, Devi, etc.
                lowerWord.endsWith("ya") ||   // Priya, Kavya, etc.
                lowerWord.endsWith("ta") ||   // Sunita, Kavita, etc.
                lowerWord.endsWith("ini") ||  // Shalini, etc.
                lowerWord.endsWith("ani") ||  // Kalpana -> Kalpani pattern
+               lowerWord.endsWith("av") ||   // Gaurav, etc.
+               lowerWord.endsWith("am") ||   // Gautam, Shyam, etc.
+               lowerWord.endsWith("al") ||   // Gopal, Vishal, etc.
+               lowerWord.endsWith("ul") ||   // Gokul, Rahul, etc.
+               lowerWord.endsWith("ri") ||   // Gauri, Girish, etc.
+               lowerWord.endsWith("ma") ||   // Garima, etc.
                lowerWord.startsWith("sri") ||  // Sri, Srinivas, etc.
                lowerWord.startsWith("ram") ||  // Ram, Ramesh, etc.
-               lowerWord.startsWith("krishn")  // Krishna, etc.
+               lowerWord.startsWith("krishn") || // Krishna, etc.
+               lowerWord.startsWith("gan") ||  // Ganesh, Ganesha, Ganga, etc.
+               lowerWord.startsWith("gau") ||  // Gautam, Gaurav, Gauri, etc.
+               lowerWord.startsWith("gop") ||  // Gopal, Gopala, etc.
+               lowerWord.startsWith("gov") ||  // Govind, etc.
+               lowerWord.startsWith("gir") ||  // Girish, Giridhar, etc.
+               lowerWord.startsWith("gaj") ||  // Gajendra, etc.
+               lowerWord.startsWith("gay")     // Gayatri, etc.
     }
     
     /**

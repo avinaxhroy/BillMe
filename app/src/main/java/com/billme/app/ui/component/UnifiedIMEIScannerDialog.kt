@@ -155,14 +155,27 @@ fun UnifiedIMEIScannerDialog(
                 // Top bar
                 TopAppBar(
                     title = { 
-                        Text(
-                            title ?: when (scanMode) {
-                                IMEIScanMode.SINGLE -> "Scan IMEI"
-                                IMEIScanMode.DUAL -> "Scan Dual IMEI"
-                                IMEIScanMode.BULK -> "Bulk IMEI Scan"
-                                IMEIScanMode.AUTO -> "Smart IMEI Scanner"
+                        Column {
+                            Text(
+                                title ?: when (scanMode) {
+                                    IMEIScanMode.SINGLE -> "Scan IMEI"
+                                    IMEIScanMode.DUAL -> "Scan Dual IMEI"
+                                    IMEIScanMode.BULK -> "Bulk IMEI Scan"
+                                    IMEIScanMode.AUTO -> "Smart IMEI Scanner"
+                                }
+                            )
+                            // Show count for bulk mode
+                            if (scanMode == IMEIScanMode.BULK && scanState is IMEIScanState.Scanning) {
+                                val scannedCount = (scanState as? IMEIScanState.Scanning)?.scannedIMEIs?.size ?: 0
+                                if (scannedCount > 0) {
+                                    Text(
+                                        "$scannedCount scanned",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    )
+                                }
                             }
-                        ) 
+                        }
                     },
                     navigationIcon = {
                         IconButton(onClick = onDismiss) {
@@ -170,15 +183,41 @@ fun UnifiedIMEIScannerDialog(
                         }
                     },
                     actions = {
-                        // Flash toggle
+                        // Flash toggle - Always available
                         IconButton(
-                            onClick = { scanner.toggleTorch() },
-                            enabled = scanState is IMEIScanState.Scanning
+                            onClick = { scanner.toggleTorch() }
                         ) {
                             Icon(
                                 if (isTorchOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
-                                "Toggle Flash"
+                                "Toggle Flash",
+                                tint = if (isTorchOn) Color(0xFFFBBF24) else LocalContentColor.current
                             )
+                        }
+                        
+                        // Complete Scan button for BULK mode (replaces bottom button)
+                        if (scanMode == IMEIScanMode.BULK && scanState is IMEIScanState.Scanning) {
+                            val scannedCount = (scanState as? IMEIScanState.Scanning)?.scannedIMEIs?.size ?: 0
+                            if (scannedCount > 0) {
+                                FilledTonalButton(
+                                    onClick = { scanner.completeBulkScan() },
+                                    modifier = Modifier.padding(end = 8.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = Color(0xFF10B981),
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        "Complete",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                         
                         // Manual entry option
@@ -200,46 +239,50 @@ fun UnifiedIMEIScannerDialog(
                     )
                 } else {
                     // Main content - Show camera preview for all states
-                    Box(modifier = Modifier.weight(1f)) {
-                        // Always show the scanning view with camera preview
-                        ScanningView(
-                            context = context,
-                            lifecycleOwner = lifecycleOwner,
-                            scanner = scanner,
-                            scanMode = scanMode,
-                            scannedIMEIs = when (val state = scanState) {
-                                is IMEIScanState.Scanning -> state.scannedIMEIs
-                                else -> emptyList()
-                            },
-                            message = when (val state = scanState) {
-                                is IMEIScanState.Idle -> "Initializing camera..."
-                                is IMEIScanState.Scanning -> state.message
-                                else -> ""
-                            }
-                        )
-                        
-                        // Overlay success or error state on top of camera preview
-                        when (val state = scanState) {
-                            is IMEIScanState.Success -> {
-                                SuccessView(
-                                    imeis = state.imeis,
-                                    message = state.message,
-                                    onComplete = { onIMEIScanned(state.imeis) },
-                                    onRescan = { 
-                                        scanner.retryScan()
-                                    }
-                                )
-                            }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            // Always show the scanning view with camera preview
+                            ScanningView(
+                                context = context,
+                                lifecycleOwner = lifecycleOwner,
+                                scanner = scanner,
+                                scanMode = scanMode,
+                                scannedIMEIs = when (val state = scanState) {
+                                    is IMEIScanState.Scanning -> state.scannedIMEIs
+                                    is IMEIScanState.Success -> state.imeis
+                                    else -> emptyList()
+                                },
+                                message = when (val state = scanState) {
+                                    is IMEIScanState.Idle -> "Initializing camera..."
+                                    is IMEIScanState.Scanning -> state.message
+                                    is IMEIScanState.Success -> state.message
+                                    else -> ""
+                                }
+                            )
                             
-                            is IMEIScanState.Error -> {
-                                ErrorView(
-                                    message = state.message,
-                                    onRetry = { scanner.retryScan() },
-                                    onDismiss = onDismiss
-                                )
+                            // Overlay success or error state on top of camera preview
+                            when (val state = scanState) {
+                                is IMEIScanState.Success -> {
+                                    SuccessView(
+                                        imeis = state.imeis,
+                                        message = state.message,
+                                        onComplete = { onIMEIScanned(state.imeis) },
+                                        onRescan = { 
+                                            scanner.retryScan()
+                                        }
+                                    )
+                                }
+                                
+                                is IMEIScanState.Error -> {
+                                    ErrorView(
+                                        message = state.message,
+                                        onRetry = { scanner.retryScan() },
+                                        onDismiss = onDismiss
+                                    )
+                                }
+                                
+                                else -> { /* Idle or Scanning - camera preview is visible */ }
                             }
-                            
-                            else -> { /* Idle or Scanning - camera preview is visible */ }
                         }
                     }
                 }
@@ -361,34 +404,6 @@ private fun ScanningView(
                 
                 // Corner markers
                 ScanningCornerMarkers()
-            }
-            
-            // Complete Scan Button - Right below scanner preview
-            if (scanMode == IMEIScanMode.BULK && scannedIMEIs.isNotEmpty()) {
-                Button(
-                    onClick = { 
-                        scanner.completeBulkScan()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(
-                        Icons.Default.CheckCircle, 
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        "Complete Scan (${scannedIMEIs.size})",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
             }
             
             // Spacer to push info panel to bottom

@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -125,18 +126,25 @@ fun AddProductScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
+                    .background(
+                        if (MaterialTheme.colorScheme.background == MaterialTheme.colorScheme.surface) {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        } else {
+                            MaterialTheme.colorScheme.background
+                        }
+                    )
                     .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
+                    .padding(horizontal = 20.dp, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 // Product Image Section
-                ProductImageSection(
+                ModernProductImageSection(
                     imageUri = uiState.imageUri,
                     onImageClick = { imagePickerLauncher.launch("image/*") }
                 )
                 
                 // Scanner Actions Card
-                ScannerActionsCard(
+                ModernScannerActionsCard(
                     onBarcodeClick = { viewModel.toggleBarcodeScanner() },
                     onIMEIClick = { viewModel.toggleIMEIScanner() },
                     onMultiIMEIClick = { viewModel.toggleMultiIMEIScanner() },
@@ -144,53 +152,53 @@ fun AddProductScreen(
                 )
                 
                 // Basic Information
-                ModernGradientCard(
+                ModernSectionCard(
                     title = "Basic Information",
-                    icon = Icons.Default.Info
+                    icon = Icons.Default.Info,
+                    iconColor = Color(0xFF2196F3)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        OutlinedTextField(
+                        ModernTextField(
                             value = uiState.productName,
                             onValueChange = viewModel::setProductName,
-                            label = { Text("Product Name *") },
-                            modifier = Modifier.fillMaxWidth(),
+                            label = "Product Name *",
                             isError = uiState.productName.isBlank() && uiState.errorMessage != null,
-                            shape = RoundedCornerShape(12.dp)
+                            leadingIcon = Icons.Default.Inventory2
                         )
                         
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            ModernTextField(
                                 value = uiState.brand,
                                 onValueChange = viewModel::setBrand,
-                                label = { Text("Brand") },
+                                label = "Brand",
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp)
+                                leadingIcon = Icons.Default.Label
                             )
                             
-                            OutlinedTextField(
+                            ModernTextField(
                                 value = uiState.model,
                                 onValueChange = viewModel::setModel,
-                                label = { Text("Model") },
+                                label = "Model",
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp)
+                                leadingIcon = Icons.Default.PhoneAndroid
                             )
                         }
                         
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            ModernTextField(
                                 value = uiState.color,
                                 onValueChange = viewModel::updateColor,
-                                label = { Text("Color") },
+                                label = "Color",
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp)
+                                leadingIcon = Icons.Default.Palette
                             )
                             
-                            OutlinedTextField(
+                            ModernTextField(
                                 value = uiState.variant,
                                 onValueChange = viewModel::updateVariant,
-                                label = { Text("Variant") },
+                                label = "Variant",
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp)
+                                leadingIcon = Icons.Default.Category
                             )
                         }
                         
@@ -204,11 +212,22 @@ fun AddProductScreen(
                                 onValueChange = {},
                                 label = { Text("Category") },
                                 readOnly = true,
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Category,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = uiState.isCategoryDropdownExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .menuAnchor(),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(16.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                                )
                             )
                             ExposedDropdownMenu(
                                 expanded = uiState.isCategoryDropdownExpanded,
@@ -229,18 +248,18 @@ fun AddProductScreen(
                 }
                 
                 // IMEI & Barcode
-                ModernGradientCard(
+                ModernSectionCard(
                     title = "IMEI & Barcode",
-                    icon = Icons.Default.QrCodeScanner
+                    icon = Icons.Default.QrCodeScanner,
+                    iconColor = Color(0xFF9C27B0)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        OutlinedTextField(
+                        ModernTextField(
                             value = uiState.imei1,
                             onValueChange = viewModel::setIMEI1,
-                            label = { Text("IMEI 1 (15 digits)") },
+                            label = "IMEI 1 (15 digits)",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
+                            leadingIcon = Icons.Default.PhoneAndroid,
                             trailingIcon = {
                                 IconButton(onClick = { viewModel.toggleIMEIScanner() }) {
                                     Icon(
@@ -252,13 +271,12 @@ fun AddProductScreen(
                             }
                         )
                         
-                        OutlinedTextField(
+                        ModernTextField(
                             value = uiState.imei2,
                             onValueChange = viewModel::setIMEI2,
-                            label = { Text("IMEI 2 (Optional)") },
+                            label = "IMEI 2 (Optional)",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
+                            leadingIcon = Icons.Default.PhoneAndroid,
                             trailingIcon = {
                                 IconButton(onClick = { viewModel.toggleIMEIScanner() }) {
                                     Icon(
@@ -271,14 +289,15 @@ fun AddProductScreen(
                         )
                         
                         // Bulk IMEI Scanner Button
-                        Button(
+                        FilledTonalButton(
                             onClick = { viewModel.toggleMultiIMEIScanner() },
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = PaddingValues(vertical = 16.dp)
                         ) {
-                            Icon(Icons.Default.QrCode2, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Bulk IMEI Scanner")
+                            Icon(Icons.Default.QrCode2, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text("Bulk IMEI Scanner", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         }
                         
                         // Show added IMEI pairs from bulk scanner
@@ -438,12 +457,11 @@ fun AddProductScreen(
                             }
                         }
                         
-                        OutlinedTextField(
+                        ModernTextField(
                             value = uiState.barcode,
                             onValueChange = viewModel::setBarcode,
-                            label = { Text("Barcode") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
+                            label = "Barcode",
+                            leadingIcon = Icons.Default.QrCode,
                             trailingIcon = {
                                 IconButton(onClick = { viewModel.toggleBarcodeScanner() }) {
                                     Icon(
@@ -458,52 +476,55 @@ fun AddProductScreen(
                 }
                 
                 // Pricing
-                ModernGradientCard(
+                ModernSectionCard(
                     title = "Pricing",
-                    icon = Icons.Default.AttachMoney
+                    icon = Icons.Default.AttachMoney,
+                    iconColor = Color(0xFF00897B)
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        ModernTextField(
                             value = uiState.mrp,
                             onValueChange = viewModel::setMRP,
-                            label = { Text("MRP") },
+                            label = "MRP",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.fillMaxWidth(),
-                            prefix = { Text("₹") }
+                            leadingIcon = Icons.Default.CurrencyRupee
                         )
                         
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            ModernTextField(
                                 value = uiState.costPrice,
                                 onValueChange = viewModel::setCostPrice,
-                                label = { Text("Cost Price *") },
+                                label = "Cost Price *",
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.weight(1f),
-                                prefix = { Text("₹") },
+                                leadingIcon = Icons.Default.LocalOffer,
                                 isError = uiState.costPrice.isBlank() && uiState.errorMessage != null
                             )
                             
-                            OutlinedTextField(
+                            ModernTextField(
                                 value = uiState.sellingPrice,
                                 onValueChange = viewModel::setSellingPrice,
-                                label = { Text("Selling Price *") },
+                                label = "Selling Price *",
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.weight(1f),
-                                prefix = { Text("₹") },
+                                leadingIcon = Icons.Default.Sell,
                                 isError = uiState.sellingPrice.isBlank() && uiState.errorMessage != null
                             )
                         }
                         
-                        OutlinedTextField(
+                        ModernTextField(
                             value = uiState.currentStock,
                             onValueChange = viewModel::setStockQuantity,
-                            label = { Text("Stock Quantity *") },
+                            label = "Stock Quantity *",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = Icons.Default.Inventory,
                             isError = uiState.currentStock.isBlank() && uiState.errorMessage != null
                         )
                     }
                 }
+                
+                // Bottom spacing for FAB
+                Spacer(modifier = Modifier.height(80.dp))
             }
             
             // OCR Processing Overlay
@@ -634,6 +655,318 @@ fun AddProductScreen(
 }
 
 @Composable
+private fun ModernProductImageSection(
+    imageUri: Uri?,
+    onImageClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onImageClick),
+        shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp,
+            pressedElevation = 8.dp,
+            hoveredElevation = 6.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (imageUri != null) {
+                MaterialTheme.colorScheme.surface
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            }
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(260.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (imageUri != null) {
+                AsyncImage(
+                    model = imageUri,
+                    contentDescription = "Product Image",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier.padding(40.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(100.dp),
+                        tonalElevation = 6.dp,
+                        shadowElevation = 4.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.AddPhotoAlternate,
+                                contentDescription = null,
+                                modifier = Modifier.size(50.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "Add Product Image",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            "Tap to select from gallery",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModernScannerActionsCard(
+    onBarcodeClick: () -> Unit,
+    onIMEIClick: () -> Unit,
+    onMultiIMEIClick: () -> Unit,
+    onOCRClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 4.dp
+        ),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFFFF9800).copy(alpha = 0.15f),
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.FlashOn,
+                            contentDescription = null,
+                            tint = Color(0xFFFF9800),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+                Text(
+                    "Quick Actions",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ModernActionButton(
+                    onClick = onBarcodeClick,
+                    icon = Icons.Default.QrCodeScanner,
+                    label = "Barcode",
+                    backgroundColor = Color(0xFFE3F2FD),
+                    iconColor = Color(0xFF1976D2),
+                    modifier = Modifier.weight(1f)
+                )
+                
+                ModernActionButton(
+                    onClick = onIMEIClick,
+                    icon = Icons.Default.PhoneAndroid,
+                    label = "IMEI",
+                    backgroundColor = Color(0xFFF3E5F5),
+                    iconColor = Color(0xFF9C27B0),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ModernActionButton(
+                    onClick = onMultiIMEIClick,
+                    icon = Icons.Default.QrCode2,
+                    label = "Multi IMEI",
+                    backgroundColor = Color(0xFFE0F2F1),
+                    iconColor = Color(0xFF00897B),
+                    modifier = Modifier.weight(1f)
+                )
+                
+                ModernActionButton(
+                    onClick = onOCRClick,
+                    icon = Icons.Default.DocumentScanner,
+                    label = "OCR Scan",
+                    backgroundColor = Color(0xFFFFF3E0),
+                    iconColor = Color(0xFFFF9800),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModernActionButton(
+    onClick: () -> Unit,
+    icon: ImageVector,
+    label: String,
+    backgroundColor: Color,
+    iconColor: Color,
+    modifier: Modifier = Modifier
+) {
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = modifier.height(80.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = backgroundColor
+        ),
+        contentPadding = PaddingValues(12.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(28.dp),
+                tint = iconColor
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = iconColor
+            )
+        }
+    }
+}
+
+@Composable
+private fun ModernSectionCard(
+    title: String,
+    icon: ImageVector,
+    iconColor: Color,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 4.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            // Section Header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = iconColor.copy(alpha = 0.15f),
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = iconColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            
+            // Content
+            content()
+        }
+    }
+}
+
+@Composable
+private fun ModernTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    leadingIcon: ImageVector? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    isError: Boolean = false
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = modifier.fillMaxWidth(),
+        leadingIcon = if (leadingIcon != null) {
+            {
+                Icon(
+                    leadingIcon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        } else null,
+        trailingIcon = trailingIcon,
+        keyboardOptions = keyboardOptions,
+        isError = isError,
+        shape = RoundedCornerShape(16.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+            focusedLabelColor = MaterialTheme.colorScheme.primary,
+            cursorColor = MaterialTheme.colorScheme.primary
+        )
+    )
+}
+
+@Composable
 private fun ProductImageSection(
     imageUri: Uri?,
     onImageClick: () -> Unit
@@ -690,117 +1023,6 @@ private fun ProductImageSection(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ScannerActionsCard(
-    onBarcodeClick: () -> Unit,
-    onIMEIClick: () -> Unit,
-    onMultiIMEIClick: () -> Unit,
-    onOCRClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.FlashOn,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    "Quick Actions",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                FilledTonalButton(
-                    onClick = onBarcodeClick,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(24.dp))
-                        Text("Barcode", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-                
-                FilledTonalButton(
-                    onClick = onIMEIClick,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(Icons.Default.PhoneAndroid, contentDescription = null, modifier = Modifier.size(24.dp))
-                        Text("IMEI", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-            }
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                FilledTonalButton(
-                    onClick = onMultiIMEIClick,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(Icons.Default.QrCode2, contentDescription = null, modifier = Modifier.size(24.dp))
-                        Text("Multi IMEI", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-                
-                FilledTonalButton(
-                    onClick = onOCRClick,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(Icons.Default.DocumentScanner, contentDescription = null, modifier = Modifier.size(24.dp))
-                        Text("OCR Scan", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                    }
                 }
             }
         }

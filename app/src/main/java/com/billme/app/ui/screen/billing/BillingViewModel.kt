@@ -318,6 +318,10 @@ class BillingViewModel @Inject constructor(
         return database.productIMEIDao().getAvailableIMEIs(productId)
     }
     
+    suspend fun getIMEIById(imeiId: Long): com.billme.app.data.local.entity.ProductIMEI? {
+        return database.productIMEIDao().getIMEIById(imeiId)
+    }
+    
     /**
      * Add product to cart by scanning IMEI
      * Fixed: More robust error handling and better cart key generation
@@ -653,6 +657,7 @@ class BillingViewModel @Inject constructor(
                     "CASH" -> PaymentMethod.CASH
                     "CARD" -> PaymentMethod.CARD
                     "UPI" -> PaymentMethod.UPI
+                    "EMI" -> PaymentMethod.EMI
                     else -> PaymentMethod.OTHER
                 }
                 
@@ -724,6 +729,20 @@ class BillingViewModel @Inject constructor(
                         )
                         // Sync stock count after marking IMEI as sold
                         database.productDao().syncStockWithAvailableIMEIs(cartItem.product.productId)
+                    } else if (cartItem.product.imei1.isNotBlank()) {
+                        // Fallback: If no imeiId but product has IMEI string, look it up and mark as sold
+                        val imeiRecord = database.productIMEIDao().getIMEIByNumber(cartItem.product.imei1)
+                        if (imeiRecord != null) {
+                            database.productIMEIDao().markAsSold(
+                                imeiId = imeiRecord.imeiId,
+                                soldDate = now,
+                                soldPrice = cartItem.effectivePrice,
+                                transactionId = transactionId,
+                                updatedAt = now
+                            )
+                            // Sync stock count after marking IMEI as sold
+                            database.productDao().syncStockWithAvailableIMEIs(cartItem.product.productId)
+                        }
                     }
                     
                     database.productDao().reduceStock(
@@ -870,25 +889,9 @@ class BillingViewModel @Inject constructor(
                     customerAddressForPdf = match.groupValues[1].trim()
                 }
                 
-                // Check if Hindi name was explicitly set (user corrected it)
-                val hindiNameRegex = Regex("HindiName:\\s*(.+?)(?=\n|$)", RegexOption.MULTILINE)
-                hindiNameRegex.find(notes)?.let { match ->
-                    val hindiName = match.groupValues[1].trim()
-                    // Only use Hindi name if it's not blank and contains actual Hindi characters
-                    if (hindiName.isNotBlank() && hindiName != customerNameForPdf) {
-                        customerNameForPdf = hindiName
-                    }
-                }
-                
-                // Check if Hindi address was explicitly set (user corrected it)
-                val hindiAddressRegex = Regex("HindiAddress:\\s*(.+?)(?=\n|$)", setOf(RegexOption.MULTILINE, RegexOption.DOT_MATCHES_ALL))
-                hindiAddressRegex.find(notes)?.let { match ->
-                    val hindiAddress = match.groupValues.getOrNull(1)?.trim() ?: ""
-                    // Only use Hindi address if it's not blank and different from English
-                    if (hindiAddress.isNotBlank() && hindiAddress != customerAddressForPdf) {
-                        customerAddressForPdf = hindiAddress
-                    }
-                }
+                // NOTE: We do NOT extract and replace Hindi name/address here
+                // The InvoicePdfGenerator will extract them directly from notes when bilingualMode=true
+                // This prevents duplication and keeps the English name for transaction records
             }
             
             // Fallback: If no customer name, use a default
@@ -929,21 +932,26 @@ class BillingViewModel @Inject constructor(
                 )
             }
             
+            // Determine if we should use bilingual mode BEFORE modifying notes
+            // Only enable if user explicitly set Hindi data
+            val useBilingualMode = transaction.notes?.contains("HindiName:") == true || 
+                                  transaction.notes?.contains("HindiAddress:") == true
+            
             // Create a modified transaction object with extracted data
+            // IMPORTANT: Preserve original notes if they contain Hindi data, otherwise update with address
             val modifiedTransaction = transaction.copy(
                 customerName = customerNameForPdf,
-                // Pass address through notes field in a format the PDF generator expects
-                notes = if (customerAddressForPdf.isNotBlank()) {
+                // Preserve Hindi data in notes, or add address if no Hindi data exists
+                notes = if (useBilingualMode) {
+                    // Keep original notes with Hindi data intact
+                    transaction.notes
+                } else if (customerAddressForPdf.isNotBlank()) {
+                    // No Hindi data, so just set the address
                     "Address: $customerAddressForPdf"
                 } else {
                     transaction.notes
                 }
             )
-            
-            // Determine if we should use bilingual mode
-            // Only enable if user explicitly set Hindi data
-            val useBilingualMode = transaction.notes?.contains("HindiName:") == true || 
-                                  transaction.notes?.contains("HindiAddress:") == true
             
             pdfGenerator.generateInvoicePdf(
                 transaction = modifiedTransaction,

@@ -66,6 +66,7 @@ object IMEITextFilter {
     /**
      * Calculate digit difference between two IMEIs
      * Used to verify dual IMEI similarity
+     * IMPROVED: Better analysis of differences
      */
     fun calculateDigitDifference(imei1: String, imei2: String): Int {
         if (imei1.length != 15 || imei2.length != 15) return 15
@@ -75,10 +76,41 @@ object IMEITextFilter {
     /**
      * Check if two IMEIs are likely from the same device
      * Dual IMEIs typically differ by 1-8 digits
+     * IMPROVED: Better similarity validation with TAC check
      */
     fun areLikelyDualIMEIs(imei1: String, imei2: String): Boolean {
+        if (imei1 == imei2) return false // Identical IMEIs are invalid
+        
         val difference = calculateDigitDifference(imei1, imei2)
-        return difference in 1..IMEIScannerConfig.MAX_DUAL_IMEI_DIFFERENCES
+        
+        // Most dual IMEIs differ by 1-8 digits (usually last few digits)
+        if (difference !in 1..IMEIScannerConfig.MAX_DUAL_IMEI_DIFFERENCES) {
+            return false
+        }
+        
+        // Check if TAC (first 8 digits) is same or very similar
+        // Dual IMEIs from same device typically have identical TAC
+        val tac1 = imei1.take(8)
+        val tac2 = imei2.take(8)
+        val tacDifference = tac1.zip(tac2).count { (a, b) -> a != b }
+        
+        // TAC should be identical or differ by at most 1 digit for dual SIM
+        if (tacDifference > 1) {
+            return false
+        }
+        
+        // Check if the differences are in reasonable positions
+        // Dual IMEIs typically differ in the serial number part (positions 9-14)
+        val differencePositions = imei1.zip(imei2).mapIndexedNotNull { index, (a, b) ->
+            if (a != b) index else null
+        }
+        
+        // Most differences should be in the serial number region (8-14)
+        val serialDifferences = differencePositions.count { it in 8..14 }
+        val tacOrChecksumDifferences = differencePositions.count { it < 8 || it == 14 }
+        
+        // Prefer differences in serial number section
+        return serialDifferences >= tacOrChecksumDifferences
     }
     
     /**
@@ -111,29 +143,38 @@ object IMEITextFilter {
     
     /**
      * Check if context suggests this is an IMEI
+     * IMPROVED: More comprehensive keyword detection
      */
     fun hasIMEIContext(context: String): Boolean {
         val keywords = listOf(
             "IMEI", "imei", "Imei", 
-            "IMEI1", "IMEI2", "IMEI 1", "IMEI 2",
-            "Device ID", "Serial", "SN"
+            "IMEI1", "IMEI2", "IMEI 1", "IMEI 2", "IMEI-1", "IMEI-2",
+            "Primary IMEI", "Secondary IMEI", "Main IMEI",
+            "Device ID", "Serial", "SN", "S/N",
+            "识别码", "串号" // Chinese characters for IMEI
         )
         return keywords.any { context.contains(it, ignoreCase = false) }
     }
     
     /**
      * Check for negative context that suggests this is NOT an IMEI
+     * IMPROVED: More comprehensive anti-pattern detection
      */
     fun hasNegativeContext(context: String): Boolean {
         val antiKeywords = listOf(
-            "invoice", "bill", "receipt", "total", "amount",
-            "price", "GST", "GSTIN", "IRN", "ACK"
+            "invoice", "bill", "receipt", "total", "amount", "paid",
+            "price", "cost", "GST", "GSTIN", "IRN", "ACK", "tax",
+            "account", "bank", "transaction", "payment", "balance",
+            "phone", "mobile", "call", "contact", "number",
+            "date", "time", "year", "month", "day",
+            "website", "email", "address", "zip", "pin"
         )
         return antiKeywords.any { context.contains(it, ignoreCase = true) }
     }
     
     /**
      * Score IMEI detection confidence (0-100)
+     * IMPROVED: More accurate confidence scoring with position awareness
      */
     fun calculateConfidenceScore(
         imei: String,
@@ -143,28 +184,44 @@ object IMEITextFilter {
         var score = 0
         
         // Base score for valid Luhn checksum
-        if (ImeiValidator.isValidImei(imei)) score += 35
+        if (ImeiValidator.isValidImei(imei)) score += 40
+        
+        // TAC validation bonus (first 8 digits)
+        val tac = imei.take(8)
+        if (!tac.startsWith("00") && tac.toSet().size >= 4) score += 10
         
         // Digit variety bonus
-        if (hasSufficientVariety(imei)) score += 15
+        if (hasSufficientVariety(imei)) score += 10
         
         // No repeating pattern bonus
-        if (!hasRepeatingPattern(imei)) score += 10
+        if (!hasRepeatingPattern(imei)) score += 8
         
         // No sequential pattern bonus
-        if (!isSequentialPattern(imei)) score += 10
+        if (!isSequentialPattern(imei)) score += 8
         
-        // Context keywords bonus
-        if (hasIMEIContext(context)) score += 20
+        // Context keywords bonus (with position awareness)
+        when {
+            context.contains(Regex("IMEI[\\s-]*[12]", RegexOption.IGNORE_CASE)) -> score += 25 // Explicit IMEI1/IMEI2
+            context.contains(Regex("(?:Primary|Secondary)\\s*IMEI", RegexOption.IGNORE_CASE)) -> score += 25
+            hasIMEIContext(context) -> score += 18 // General IMEI context
+        }
         
-        // Negative context penalty
-        if (hasNegativeContext(context)) score -= 30
+        // Negative context penalty (stronger penalty)
+        if (hasNegativeContext(context)) score -= 40
         
-        // Multiple detections bonus
-        score += minOf(detectionCount * 5, 15)
+        // Multiple detections bonus (progressive)
+        score += when (detectionCount) {
+            1 -> 5
+            2 -> 12
+            3 -> 18
+            else -> 20
+        }
         
         // Known invalid pattern penalty
-        if (ImeiValidator.isKnownInvalidPattern(imei)) score -= 50
+        if (ImeiValidator.isKnownInvalidPattern(imei)) score -= 60
+        
+        // False positive pattern penalty
+        if (isFalsePositive(imei)) score -= 50
         
         return minOf(maxOf(score, 0), 100)
     }

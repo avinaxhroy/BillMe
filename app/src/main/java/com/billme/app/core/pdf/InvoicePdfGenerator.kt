@@ -565,7 +565,11 @@ class InvoicePdfGenerator @Inject constructor(
         var yPos = startY
 
         canvas.drawText("Payment Method:", MARGIN, yPos, boldPaint)
-        canvas.drawText(transaction.paymentMethod.name, MARGIN + 120, yPos, normalPaint)
+        val paymentMethodText = when (transaction.paymentMethod.name) {
+            "EMI" -> "Credit on Sale/EMI"
+            else -> transaction.paymentMethod.name
+        }
+        canvas.drawText(paymentMethodText, MARGIN + 120, yPos, normalPaint)
         yPos += LINE_HEIGHT
 
         if (transaction.paymentStatus == PaymentStatus.PAID) {
@@ -585,63 +589,87 @@ class InvoicePdfGenerator @Inject constructor(
     private fun drawFooter(canvas: Canvas, startY: Float, customerCopy: Boolean, gstConfig: GSTConfiguration, signatureFilePath: String? = null) {
         var yPos = PAGE_HEIGHT - MARGIN - 110
 
-        // Draw signature if available
+        // Draw signature if available or placeholder
         if (!signatureFilePath.isNullOrBlank()) {
-            try {
-                val signatureFile = File(signatureFilePath)
-                if (signatureFile.exists()) {
-                    // Decode with high quality options
-                    val options = BitmapFactory.Options().apply {
-                        inPreferredConfig = Bitmap.Config.ARGB_8888
-                        inDither = true
-                    }
-                    val bitmap = BitmapFactory.decodeFile(signatureFilePath, options)
-                    if (bitmap != null) {
-                        // Calculate signature dimensions for better quality
-                        // Use larger intermediate size to preserve quality
-                        val maxWidth = 150f  // Increased from 100
-                        val maxHeight = 75f  // Increased from 50
-                        val scale = minOf(maxWidth / bitmap.width, maxHeight / bitmap.height)
-                        val scaledWidth = (bitmap.width * scale).toInt()
-                        val scaledHeight = (bitmap.height * scale).toInt()
-                        
-                        // Resize bitmap with high-quality filtering
-                        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
-                        
-                        // Create a paint with high-quality rendering
-                        val signaturePaint = Paint().apply {
-                            isAntiAlias = true
-                            isFilterBitmap = true
-                            isDither = true
-                        }
-                        
-                        // Draw signature on right side with proper positioning
-                        val signatureX = PAGE_WIDTH - MARGIN - scaledWidth - 10
-                        val signatureY = yPos - scaledHeight - 10
-                        canvas.drawBitmap(scaledBitmap, signatureX, signatureY, signaturePaint)
-                        
-                        // Draw underline for signature
-                        val underlineY = yPos - 5
-                        canvas.drawLine(signatureX - 20, underlineY, signatureX + scaledWidth + 20, underlineY, linePaint)
-                        
-                        // Draw label
-                        val labelPaint = Paint(smallPaint).apply {
-                            color = Color.BLACK
-                            textSize = 10f
-                        }
-                        val labelText = "Authorized Signature"
-                        val labelWidth = labelPaint.measureText(labelText)
-                        val labelX = signatureX + (scaledWidth - labelWidth) / 2
-                        canvas.drawText(labelText, labelX, yPos + 8, labelPaint)
-                        
-                        yPos += scaledHeight + 20
-                        scaledBitmap.recycle()
-                        bitmap.recycle()
-                    }
+            // Check if it's a placeholder request
+            if (signatureFilePath.equals("PLACEHOLDER", ignoreCase = true)) {
+                // Draw simple signature placeholder - just underline and text
+                val signatureWidth = 150f
+                val signatureX = PAGE_WIDTH - MARGIN - signatureWidth - 10
+                
+                // Draw underline for signature
+                val underlineY = yPos - 5
+                canvas.drawLine(signatureX - 20, underlineY, signatureX + signatureWidth + 20, underlineY, linePaint)
+                
+                // Draw label
+                val labelPaint = Paint(smallPaint).apply {
+                    color = Color.BLACK
+                    textSize = 10f
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                // If signature can't be loaded, just skip it
+                val labelText = "Authorized Signature"
+                val labelWidth = labelPaint.measureText(labelText)
+                val labelX = signatureX + (signatureWidth - labelWidth) / 2
+                canvas.drawText(labelText, labelX, yPos + 8, labelPaint)
+                
+                yPos += 20
+            } else {
+                // Handle digital signature image
+                try {
+                    val signatureFile = File(signatureFilePath)
+                    if (signatureFile.exists()) {
+                        // Decode with high quality options
+                        val options = BitmapFactory.Options().apply {
+                            inPreferredConfig = Bitmap.Config.ARGB_8888
+                            inDither = true
+                        }
+                        val bitmap = BitmapFactory.decodeFile(signatureFilePath, options)
+                        if (bitmap != null) {
+                            // Calculate signature dimensions for better quality
+                            // Use larger intermediate size to preserve quality
+                            val maxWidth = 150f  // Increased from 100
+                            val maxHeight = 75f  // Increased from 50
+                            val scale = minOf(maxWidth / bitmap.width, maxHeight / bitmap.height)
+                            val scaledWidth = (bitmap.width * scale).toInt()
+                            val scaledHeight = (bitmap.height * scale).toInt()
+                            
+                            // Resize bitmap with high-quality filtering
+                            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
+                            
+                            // Create a paint with high-quality rendering
+                            val signaturePaint = Paint().apply {
+                                isAntiAlias = true
+                                isFilterBitmap = true
+                                isDither = true
+                            }
+                            
+                            // Draw signature on right side with proper positioning
+                            val signatureX = PAGE_WIDTH - MARGIN - scaledWidth - 10
+                            val signatureY = yPos - scaledHeight - 10
+                            canvas.drawBitmap(scaledBitmap, signatureX, signatureY, signaturePaint)
+                            
+                            // Draw underline for signature
+                            val underlineY = yPos - 5
+                            canvas.drawLine(signatureX - 20, underlineY, signatureX + scaledWidth + 20, underlineY, linePaint)
+                            
+                            // Draw label
+                            val labelPaint = Paint(smallPaint).apply {
+                                color = Color.BLACK
+                                textSize = 10f
+                            }
+                            val labelText = "Authorized Signature"
+                            val labelWidth = labelPaint.measureText(labelText)
+                            val labelX = signatureX + (scaledWidth - labelWidth) / 2
+                            canvas.drawText(labelText, labelX, yPos + 8, labelPaint)
+                            
+                            yPos += scaledHeight + 20
+                            scaledBitmap.recycle()
+                            bitmap.recycle()
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    // If signature can't be loaded, just skip it
+                }
             }
         }
 
@@ -791,7 +819,11 @@ class InvoicePdfGenerator @Inject constructor(
             appendLine("--------------------------------")
             appendLine("TOTAL:".padEnd(25) + "₹${transaction.grandTotal}".padStart(7))
             appendLine("================================")
-            appendLine("Payment: ${transaction.paymentMethod.name}")
+            val paymentMethodText = when (transaction.paymentMethod.name) {
+                "EMI" -> "Credit on Sale/EMI"
+                else -> transaction.paymentMethod.name
+            }
+            appendLine("Payment: $paymentMethodText")
             appendLine("Status: ${transaction.paymentStatus.name}")
             appendLine()
             appendLine("   Thank you for your business!  ")

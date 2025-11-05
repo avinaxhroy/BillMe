@@ -15,8 +15,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.billme.app.core.backup.BackupInfo
@@ -105,26 +108,32 @@ fun BackupManagementScreen(
     
     Scaffold(
         topBar = {
-            ModernLargeTopAppBar(
-                title = "Backup & Restore",
-                subtitle = "${backups.size} backups available",
-                navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
-                onNavigationClick = onNavigateBack,
-                useGradient = true,
-                gradientColors = listOf(Warning, WarningLight)
+            TopAppBar(
+                title = { 
+                    Column {
+                        Text(
+                            "Backup & Restore",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "${backups.size} backups available",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            ModernExtendedFAB(
-                text = "Create Backup",
-                icon = Icons.Default.Backup,
-                onClick = { viewModel.createBackup() },
-                expanded = true,
-                useGradient = true,
-                gradientColors = listOf(Warning, WarningLight)
-            )
-        }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         
         // Track shown messages to prevent duplicate snackbars
@@ -134,34 +143,121 @@ fun BackupManagementScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(padding),
+            contentPadding = PaddingValues(vertical = 16.dp)
         ) {
             
-            // Modern Progress Indicator - More compact
+            // Backup Status Card - Matching the reference image style
+            item {
+                val lastBackup = backups.firstOrNull()
+                val currentTime = remember { System.currentTimeMillis() }
+                val isRecent = lastBackup?.let { 
+                    (currentTime - it.timestamp) < 24 * 60 * 60 * 1000 // Less than 24 hours
+                } ?: false
+                
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isRecent) Color(0xFFE8F5E9) else Color(0xFFFFF3E0) // Green if recent, amber if old
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (isRecent) Color(0xFFC8E6C9) else Color(0xFFFFE0B2), // Match card color
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    if (lastBackup != null) Icons.Default.CloudDone else Icons.Default.CloudOff,
+                                    contentDescription = null,
+                                    tint = if (isRecent) Color(0xFF4CAF50) else Color(0xFFF57C00), // Green if recent, orange if old
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
+                        
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Backup Status",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isRecent) Color(0xFF1B5E20) else Color(0xFFE65100)
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                if (lastBackup != null) {
+                                    val timeDiff = currentTime - lastBackup.timestamp
+                                    val hours = timeDiff / (60 * 60 * 1000)
+                                    val days = timeDiff / (24 * 60 * 60 * 1000)
+                                    
+                                    when {
+                                        hours < 1 -> "Last backup: Just now"
+                                        hours < 24 -> "Last backup: ${hours}h ago"
+                                        days == 1L -> "Last backup: Yesterday"
+                                        days < 7 -> "Last backup: ${days} days ago"
+                                        else -> "Last backup: ${lastBackup.formattedDate}"
+                                    }
+                                } else {
+                                    "No backups yet"
+                                },
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (isRecent) Color(0xFF4CAF50) else Color(0xFFF57C00),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Progress Indicator - Only show when in progress
             item {
                 when (val progress = backupProgress) {
                     is EnhancedBackupService.BackupProgress.InProgress -> {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp, 8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            elevation = CardDefaults.cardElevation(2.dp)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Column(
-                                modifier = Modifier.padding(12.dp)
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                ModernLinearProgress(
-                                    progress = progress.progress / 100f,
-                                    label = progress.message,
-                                    showPercentage = true,
-                                    gradientColors = listOf(Warning, WarningLight)
+                                Text(
+                                    progress.message,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                LinearProgressIndicator(
+                                    progress = { progress.progress / 100f },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                )
+                                Text(
+                                    "${progress.progress.toInt()}%",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     }
                     is EnhancedBackupService.BackupProgress.Success -> {
-                        // Only show snackbar once per success using timestamp
                         val currentTime = System.currentTimeMillis()
                         if (currentTime - lastShownSuccessTime > 2000) {
                             LaunchedEffect(currentTime) {
@@ -174,7 +270,6 @@ fun BackupManagementScreen(
                         }
                     }
                     is EnhancedBackupService.BackupProgress.Error -> {
-                        // Only show snackbar once per unique error
                         if (lastShownErrorMessage != progress.message) {
                             LaunchedEffect(progress.message) {
                                 snackbarHostState.showSnackbar(
@@ -189,7 +284,7 @@ fun BackupManagementScreen(
                 }
             }
             
-            // Auto-Backup Settings - More compact
+            // Daily Auto-Backup Toggle - Matching reference image style
             item {
                 var autoBackupEnabled by remember { mutableStateOf(false) }
                 
@@ -200,25 +295,31 @@ fun BackupManagementScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
+                            .padding(20.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 "Daily Auto-Backup",
-                                style = MaterialTheme.typography.titleSmall,
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
+                            Spacer(Modifier.height(4.dp))
                             Text(
                                 "Auto backup once daily",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Switch(
@@ -226,22 +327,33 @@ fun BackupManagementScreen(
                             onCheckedChange = { enabled ->
                                 autoBackupEnabled = enabled
                                 viewModel.setAutoBackupEnabled(enabled)
-                            }
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF2196F3),
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color(0xFFE0E0E0)
+                            )
                         )
                     }
                 }
             }
             
-            // Google Drive Authentication - More compact
+            // Cloud Drive Sync - Matching reference image style
             item {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -250,68 +362,95 @@ fun BackupManagementScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    "Google Drive Sync",
-                                    style = MaterialTheme.typography.titleSmall,
+                                    "Cloud Drive Sync",
+                                    style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold
                                 )
+                                Spacer(Modifier.height(4.dp))
                                 Text(
-                                    if (driveSignedIn) "Connected" 
+                                    if (driveSignedIn) "Connected to Google Drive" 
                                     else "Not connected",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = MaterialTheme.typography.bodyLarge,
                                     color = if (driveSignedIn) 
-                                        MaterialTheme.colorScheme.primary
+                                        Color(0xFF2196F3)
                                     else 
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             
-                            if (driveSignedIn) {
-                                Icon(
-                                    Icons.Default.CheckCircle,
-                                    contentDescription = "Connected",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            } else {
-                                Icon(
-                                    Icons.Default.CloudOff,
-                                    contentDescription = "Not connected",
-                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                    modifier = Modifier.size(24.dp)
-                                )
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (driveSignedIn) 
+                                    Color(0xFFE3F2FD) // Light blue like in image
+                                else 
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Icon(
+                                        if (driveSignedIn) Icons.Default.CheckCircle else Icons.Default.CloudOff,
+                                        contentDescription = if (driveSignedIn) "Connected" else "Not connected",
+                                        tint = if (driveSignedIn) 
+                                            Color(0xFF2196F3)
+                                        else 
+                                            MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
                             }
                         }
                         
                         if (driveSignedIn) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Button(
                                     onClick = { viewModel.syncToGoogleDrive() },
                                     modifier = Modifier.weight(1f),
-                                    enabled = backupProgress !is EnhancedBackupService.BackupProgress.InProgress && driveUploadStatus !is DriveUploadStatus.Uploading
+                                    enabled = backupProgress !is EnhancedBackupService.BackupProgress.InProgress && driveUploadStatus !is DriveUploadStatus.Uploading,
+                                    shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(vertical = 14.dp)
                                 ) {
                                     if (driveUploadStatus is DriveUploadStatus.Uploading) {
                                         CircularProgressIndicator(
-                                            modifier = Modifier.size(16.dp),
+                                            modifier = Modifier.size(18.dp),
                                             strokeWidth = 2.dp,
                                             color = MaterialTheme.colorScheme.onPrimary
                                         )
                                     } else {
-                                        Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Icon(
+                                            Icons.Default.CloudUpload, 
+                                            contentDescription = null, 
+                                            modifier = Modifier.size(18.dp)
+                                        )
                                     }
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(if (driveUploadStatus is DriveUploadStatus.Uploading) "Uploading..." else "Upload", style = MaterialTheme.typography.labelMedium)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        if (driveUploadStatus is DriveUploadStatus.Uploading) "Uploading..." else "Upload",
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
                                 }
                                 
                                 OutlinedButton(
                                     onClick = { viewModel.signOutFromDrive() },
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(vertical = 14.dp)
                                 ) {
-                                    Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Disconnect", style = MaterialTheme.typography.labelMedium)
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.Logout, 
+                                        contentDescription = null, 
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        "Disconnect",
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
                                 }
                             }
                         } else {
@@ -327,69 +466,126 @@ fun BackupManagementScreen(
                                         viewModel.showSignInError("Failed to start sign-in: ${e.message}")
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(vertical = 14.dp)
                             ) {
-                                Icon(Icons.Default.Login, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Login, 
+                                    contentDescription = null, 
+                                    modifier = Modifier.size(18.dp)
+                                )
                                 Spacer(Modifier.width(8.dp))
-                                Text("Sign in with Google", style = MaterialTheme.typography.labelMedium)
+                                Text(
+                                    "Sign in with Google",
+                                    style = MaterialTheme.typography.labelLarge
+                                )
                             }
                         }
                     }
                 }
             }
             
-            // Action Cards - Simplified
+            // Quick Actions Section - Matching reference image style
             item {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp, 8.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
                             "Quick Actions",
-                            style = MaterialTheme.typography.titleSmall,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                         
+                        // Primary Actions Row - Matching image style
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Button(
                                 onClick = { viewModel.createBackup() },
                                 modifier = Modifier.weight(1f),
-                                enabled = backupProgress !is EnhancedBackupService.BackupProgress.InProgress
+                                enabled = backupProgress !is EnhancedBackupService.BackupProgress.InProgress,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF2196F3) // Blue like in image
+                                ),
+                                contentPadding = PaddingValues(vertical = 16.dp)
                             ) {
-                                Icon(Icons.Default.Backup, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Backup", style = MaterialTheme.typography.labelMedium)
+                                Icon(
+                                    Icons.Default.CloudUpload, 
+                                    contentDescription = null, 
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "Backup Now",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                             
-                            OutlinedButton(
+                            Button(
                                 onClick = { viewModel.createAndShareBackup() },
                                 modifier = Modifier.weight(1f),
-                                enabled = backupProgress !is EnhancedBackupService.BackupProgress.InProgress
+                                enabled = backupProgress !is EnhancedBackupService.BackupProgress.InProgress,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFE3F2FD) // Light blue like in image
+                                ),
+                                contentPadding = PaddingValues(vertical = 16.dp)
                             ) {
-                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Share", style = MaterialTheme.typography.labelMedium)
+                                Icon(
+                                    Icons.Default.Share, 
+                                    contentDescription = null, 
+                                    modifier = Modifier.size(22.dp),
+                                    tint = Color(0xFF2196F3)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "Share",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2196F3)
+                                )
                             }
                         }
                         
-                        // Google Drive restore button (only show if signed in)
+                        // Restore from Drive button - Matching image style
                         if (driveSignedIn) {
-                            OutlinedButton(
+                            Button(
                                 onClick = { viewModel.restoreLatestFromGoogleDrive() },
                                 modifier = Modifier.fillMaxWidth(),
-                                enabled = backupProgress !is EnhancedBackupService.BackupProgress.InProgress
+                                enabled = backupProgress !is EnhancedBackupService.BackupProgress.InProgress,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Transparent,
+                                    contentColor = Color(0xFF2196F3)
+                                ),
+                                contentPadding = PaddingValues(vertical = 16.dp)
                             ) {
-                                Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Restore Latest from Drive", style = MaterialTheme.typography.labelMedium)
+                                Icon(
+                                    Icons.Default.History, 
+                                    contentDescription = null, 
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "Restore Latest from Drive",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                     }
@@ -401,26 +597,30 @@ fun BackupManagementScreen(
                 if (backups.isNotEmpty()) {
                     Text(
                         "Available Backups (${backups.size})",
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
             
-            // Available Backups List
+            // Available Backups List - Matching reference image style
             if (backups.isNotEmpty()) {
                 items(
                     items = backups,
                     key = { it.file.absolutePath }
                 ) { backup ->
-                    BackupCard(
+                    ImprovedBackupCard(
                         backup = backup,
                         onRestoreClick = { showRestoreDialog = backup },
-                        onShareClick = { viewModel.shareBackup(backup) },
                         onDeleteClick = { showDeleteDialog = backup },
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                     )
+                }
+                
+                // Bottom spacing
+                item {
+                    Spacer(Modifier.height(24.dp))
                 }
             } else {
                 item {
@@ -430,132 +630,281 @@ fun BackupManagementScreen(
         }
     }
     
-    // Restore Confirmation Dialog
+    // Restore Confirmation Dialog - Improved design
     showRestoreDialog?.let { backup ->
-        ModernConfirmDialog(
+        AlertDialog(
             onDismissRequest = { showRestoreDialog = null },
-            title = "Restore Backup",
-            message = "Are you sure you want to restore this backup?\n\nCreated: ${backup.formattedDate}\n\n⚠️ This will replace all current data. The app will need to restart.",
-            confirmText = "Restore",
-            onConfirm = {
-                viewModel.restoreBackup(backup)
-                showRestoreDialog = null
-            }
+            icon = {
+                Icon(
+                    Icons.Default.Restore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    "Restore Backup",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Are you sure you want to restore this backup?",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                "Backup: ${backup.formattedDate}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                "Size: ${backup.formattedSize}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            "This will replace all current data. The app will need to restart.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.restoreBackup(backup)
+                        showRestoreDialog = null
+                    },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Restore")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showRestoreDialog = null },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Cancel")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
         )
     }
     
-    // Delete Confirmation Dialog
+    // Delete Confirmation Dialog - Improved design
     showDeleteDialog?.let { backup ->
-        ModernConfirmDialog(
+        AlertDialog(
             onDismissRequest = { showDeleteDialog = null },
-            title = "Delete Backup",
-            message = "Are you sure you want to delete this backup? This action cannot be undone.",
-            confirmText = "Delete",
-            onConfirm = {
-                viewModel.deleteBackup(backup)
-                showDeleteDialog = null
+            icon = {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(32.dp)
+                )
             },
-            isDestructive = true
+            title = {
+                Text(
+                    "Delete Backup",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Are you sure you want to delete this backup?",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                "Backup: ${backup.formattedDate}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                "Size: ${backup.formattedSize}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "This action cannot be undone.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteBackup(backup)
+                        showDeleteDialog = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = null },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Cancel")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
         )
     }
 }
 
+// Improved Backup Card - Matching reference image style exactly
 @Composable
-private fun BackupCard(
+private fun ImprovedBackupCard(
     backup: BackupInfo,
     onRestoreClick: () -> Unit,
-    onShareClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
         ) {
+            // Top section with icon, info, and delete button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // Icon - Cloud for auto backup, Phone for manual
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFFE3F2FD), // Light blue like in image
+                        modifier = Modifier.size(56.dp)
                     ) {
-                        Icon(
-                            if (backup.isAutoBackup) Icons.Default.Schedule else Icons.Default.Backup,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                if (backup.isAutoBackup) Icons.Default.CloudDone else Icons.Default.PhoneAndroid,
+                                contentDescription = null,
+                                tint = Color(0xFF2196F3),
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                    
+                    // Backup Info
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         Text(
                             backup.formattedDate,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
-                    }
-                    
-                    Spacer(Modifier.height(4.dp))
-                    
-                    Text(
-                        backup.formattedSize,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
-                // Backup Type Badge
-                if (backup.isAutoBackup) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.tertiaryContainer
-                    ) {
                         Text(
-                            "Auto",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                            backup.formattedSize,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-            }
-            
-            Spacer(Modifier.height(12.dp))
-            
-            // Action Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onRestoreClick,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Restore")
-                }
                 
-                OutlinedButton(
-                    onClick = onShareClick,
-                    modifier = Modifier.weight(1f)
+                // Delete Button
+                IconButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Share")
-                }
-                
-                IconButton(onClick = onDeleteClick) {
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.error
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
+            }
+            
+            Spacer(Modifier.height(16.dp))
+            
+            // Full-width Restore Button - Matching image style
+            Button(
+                onClick = onRestoreClick,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFE3F2FD), // Light blue like in image
+                    contentColor = Color(0xFF2196F3)
+                ),
+                contentPadding = PaddingValues(vertical = 14.dp)
+            ) {
+                Icon(
+                    Icons.Default.Restore,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Restore",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -565,32 +914,49 @@ private fun BackupCard(
 private fun EmptyBackupsView() {
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
+            .fillMaxWidth()
+            .padding(48.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Icon(
-                Icons.Default.CloudOff,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.size(96.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        Icons.Default.CloudOff,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             
-            Text(
-                "No Backups Yet",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Text(
-                "Create your first backup to secure your data",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "No Backups Yet",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Text(
+                    "Create your first backup to secure your data",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }

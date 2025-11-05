@@ -81,7 +81,7 @@ enum class DiscountType {
 }
 
 enum class PaymentMethod {
-    CASH, CARD, UPI, OTHER
+    CASH, CARD, UPI, EMI, OTHER
 }
 
 enum class PaymentStatus {

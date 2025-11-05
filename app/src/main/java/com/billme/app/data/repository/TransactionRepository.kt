@@ -302,6 +302,31 @@ class TransactionRepository @Inject constructor(
     }
     
     /**
+     * Get yesterday's sales summary
+     */
+    suspend fun getYesterdaySummary(): DailySummary {
+        val yesterday = Clock.System.now().minus(kotlin.time.Duration.parse("1d"))
+        return getDailySummary(yesterday)
+    }
+    
+    /**
+     * Get sales data for the last 7 days
+     */
+    suspend fun getLast7DaysSales(): List<Double> {
+        val salesList = mutableListOf<Double>()
+        val now = Clock.System.now()
+        
+        // Get sales for each of the last 7 days
+        for (i in 6 downTo 0) {
+            val date = now.minus(kotlin.time.Duration.parse("${i}d"))
+            val sales = transactionDao.getDailySales(date)
+            salesList.add(sales.toDouble())
+        }
+        
+        return salesList
+    }
+    
+    /**
      * Generate transaction number
      */
     private suspend fun generateTransactionNumber(): String {

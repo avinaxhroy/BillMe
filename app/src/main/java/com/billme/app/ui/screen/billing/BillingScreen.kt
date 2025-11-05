@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,32 +60,34 @@ fun BillingScreen(
     
     Scaffold(
         topBar = {
-            ModernTopAppBar(
-                title = "Create Bill",
-                subtitle = if (uiState.cartItems.isNotEmpty()) "${uiState.cartItems.size} items in cart" else "Add products to cart",
-                navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
-                onNavigationClick = onNavigateBack,
-                useGradient = true,
-                actions = {
-                    // IMEI Quick Scan Button with badge
-                    Box {
-                        IconButton(onClick = { showIMEIScanDialog = true }) {
-                            Icon(
-                                Icons.Default.QrCodeScanner,
-                                contentDescription = "Scan IMEI",
-                                tint = Color.White
-                            )
-                        }
-                        if (uiState.cartItems.isNotEmpty()) {
-                            CounterBadge(
-                                count = uiState.cartItems.size,
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = (-4).dp, y = 4.dp)
-                            )
-                        }
+            TopAppBar(
+                title = { 
+                    Text(
+                        "Create Bill",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
-                }
+                },
+                actions = {
+                    IconButton(onClick = { showIMEIScanDialog = true }) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "Scan IMEI"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { paddingValues ->
@@ -134,36 +137,16 @@ fun BillingScreen(
                         onQueryChange = viewModel::onSearchQueryChange,
                         searchResults = searchResults,
                         onProductSelected = viewModel::addToCart,
+                        onScanClick = { showIMEIScanDialog = true },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 }
                 
-                // Quick IMEI Scan Chip
+                // Quick IMEI Scan Chip - More subtle
                 item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        AssistChip(
-                            onClick = { showIMEIScanDialog = true },
-                            label = { Text("Quick Add by IMEI Scan") },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.QrCodeScanner,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                labelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
                 
                 // Cart Items Header
@@ -187,8 +170,16 @@ fun BillingScreen(
                     ) { cartItem ->
                         var showPriceEditDialog by remember { mutableStateOf(false) }
                         
+                        // Fetch IMEI data if this cart item has an IMEI ID
+                        val imeiData by produceState<com.billme.app.data.local.entity.ProductIMEI?>(null, cartItem.imeiId) {
+                            value = cartItem.imeiId?.let { 
+                                viewModel.getIMEIById(it)
+                            }
+                        }
+                        
                         CartItemCard(
                             cartItem = cartItem,
+                            imeiData = imeiData,
                             onIncrease = { viewModel.increaseQuantity(cartItem.product) },
                             onDecrease = { viewModel.decreaseQuantity(cartItem.product) },
                             onRemove = { viewModel.removeFromCart(cartItem.product) },
@@ -320,7 +311,7 @@ fun BillingScreen(
             title = { Text("Select Payment Method") },
             text = {
                 Column {
-                    listOf("CASH", "CARD", "UPI", "OTHER").forEach { method ->
+                    listOf("CASH", "EMI", "UPI", "OTHER").forEach { method ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -360,10 +351,17 @@ fun BillingScreen(
             // Auto-generate both copies when dialog opens (only once per transaction)
             LaunchedEffect(txnId, showSuccessDialog) {
                 if (!pdfGenerated && showSuccessDialog) {
-                    val (customerCopy, ownerCopy) = viewModel.generateAndSaveBothCopies(txnId)
-                    customerPdfFile = customerCopy
-                    ownerPdfFile = ownerCopy
-                    pdfGenerated = true
+                    try {
+                        val (customerCopy, ownerCopy) = viewModel.generateAndSaveBothCopies(txnId)
+                        customerPdfFile = customerCopy
+                        ownerPdfFile = ownerCopy
+                        pdfGenerated = true
+                    } catch (e: Exception) {
+                        android.util.Log.e("BillingScreen", "Error generating invoice PDFs", e)
+                        e.printStackTrace()
+                        // Mark as generated to prevent infinite retry
+                        pdfGenerated = true
+                    }
                 }
             }
             
@@ -452,236 +450,187 @@ fun CustomerDetailsSection(
     
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        text = "Customer Details",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+                Text(
+                    text = "Customer",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
                 
-                // Toggle for Hindi transliteration
+                // Compact Hindi toggle
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = "Hindi",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
+                        text = "हिंदी",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = if (enableHindiTransliteration) 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Switch(
                         checked = enableHindiTransliteration,
-                        onCheckedChange = { enableHindiTransliteration = it }
+                        onCheckedChange = { enableHindiTransliteration = it },
+                        modifier = Modifier.height(24.dp)
                     )
                 }
             }
             
-            // Customer Name Field with Hindi support
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = customerName,
-                    onValueChange = { newValue ->
-                        onCustomerNameChange(newValue)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { 
-                        Text(if (enableHindiTransliteration) "Customer Name * (हिंदी में)" else "Customer Name *") 
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Default.Person, contentDescription = null)
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                    )
+            // Customer Name Field - Cleaner design
+            OutlinedTextField(
+                value = customerName,
+                onValueChange = onCustomerNameChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Customer Name") },
+                placeholder = { Text("Enter name") },
+                singleLine = true,
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                 )
+            )
+            
+            // Live Hindi preview if enabled
+            if (enableHindiTransliteration && customerName.isNotBlank() && 
+                !com.billme.app.core.util.HindiTransliterator.containsHindi(customerName)) {
+                val hindiPreview = com.billme.app.core.util.HindiTransliterator.transliterateFullName(customerName)
                 
-                // Live transliteration preview
-                if (enableHindiTransliteration && customerName.isNotBlank() && 
-                    !com.billme.app.core.util.HindiTransliterator.containsHindi(customerName)) {
-                    val hindiPreview = com.billme.app.core.util.HindiTransliterator.transliterateFullName(customerName)
-                    val confidence = com.billme.app.core.util.HindiTransliterator.getConfidenceScore(customerName)
-                    
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        color = if (confidence > 0.7f) 
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                        else 
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(8.dp)
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    Icons.Default.Translate,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = hindiPreview,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                            
-                            // Confidence indicator
-                            if (confidence >= 0.7f) {
-                                Icon(
-                                    Icons.Default.CheckCircle,
-                                    contentDescription = "High confidence",
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            } else if (confidence >= 0.4f) {
-                                Icon(
-                                    Icons.Default.Warning,
-                                    contentDescription = "Medium confidence",
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.tertiary
-                                )
-                            }
-                        }
+                        Icon(
+                            Icons.Default.Translate,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = hindiPreview,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             }
             
+            // Phone with contact icon
             OutlinedTextField(
                 value = customerPhone,
                 onValueChange = onCustomerPhoneChange,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Phone Number (Optional)") },
-                leadingIcon = {
-                    Icon(Icons.Default.Phone, contentDescription = null)
+                label = { Text("Phone Number") },
+                placeholder = { Text("Enter phone") },
+                trailingIcon = {
+                    Icon(
+                        Icons.Default.ContactPhone,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(8.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                 )
             )
             
-            // Customer Address Field with Hindi support
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = customerAddress,
-                    onValueChange = { newValue ->
-                        onCustomerAddressChange(newValue)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { 
-                        Text(if (enableHindiTransliteration) "Address (Optional) (हिंदी में)" else "Address (Optional)") 
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Default.LocationOn, contentDescription = null)
-                    },
-                    minLines = 2,
-                    maxLines = 3,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                    )
+            // Address Field - More compact
+            OutlinedTextField(
+                value = customerAddress,
+                onValueChange = onCustomerAddressChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Address (Optional)") },
+                placeholder = { Text("Enter address") },
+                minLines = 2,
+                maxLines = 2,
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                 )
+            )
+            
+            // Live Hindi preview for address if enabled
+            if (enableHindiTransliteration && customerAddress.isNotBlank() && 
+                !com.billme.app.core.util.HindiTransliterator.containsHindi(customerAddress)) {
+                val hindiPreview = com.billme.app.core.util.HindiTransliterator.transliterateAddress(customerAddress)
                 
-                // Live transliteration preview for address
-                if (enableHindiTransliteration && customerAddress.isNotBlank() && 
-                    !com.billme.app.core.util.HindiTransliterator.containsHindi(customerAddress)) {
-                    val hindiPreview = com.billme.app.core.util.HindiTransliterator.transliterateAddress(customerAddress)
-                    val addressConfidence = com.billme.app.core.util.HindiTransliterator.getConfidenceScore(customerAddress)
-                    
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        color = if (addressConfidence > 0.7f)
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                        else
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(8.dp)
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Translate,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = hindiPreview,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Medium,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                        Icon(
+                            Icons.Default.Translate,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = hindiPreview,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
             
-            // Preview Hindi button
-            if (customerName.isNotBlank()) {
-                Button(
+            // Preview Hindi button - Only show when transliteration is enabled
+            if (enableHindiTransliteration && customerName.isNotBlank()) {
+                OutlinedButton(
                     onClick = onPreviewHindiClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
                 ) {
-                    Icon(Icons.Default.Translate, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.Default.Translate, 
+                        contentDescription = null, 
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(Modifier.width(8.dp))
-                    Text("Preview Hindi / Edit (हिंदी में देखें)")
+                    Text(
+                        "Preview & Edit Hindi",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
         }
@@ -695,45 +644,91 @@ fun SearchBar(
     onQueryChange: (String) -> Unit,
     searchResults: List<Product>,
     onProductSelected: (Product) -> Unit,
+    onScanClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
     
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            ModernSearchField(
-                value = query,
-                onValueChange = {
-                    onQueryChange(it)
-                    expanded = it.isNotEmpty()
-                },
-                placeholder = "Search products by name, brand, IMEI...",
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            // Search Results Dropdown
-            if (expanded && searchResults.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    LazyColumn {
-                        items(searchResults) { product ->
-                            SearchResultItem(
-                                product = product,
-                                onClick = {
-                                    onProductSelected(product)
-                                    onQueryChange("")
-                                    expanded = false
-                                }
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Products Header
+        Text(
+            text = "Products",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+        )
+        
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                // Search Field with icons
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = {
+                        onQueryChange(it)
+                        expanded = it.isNotEmpty()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search product or scan IMEI") },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = onScanClick) {
+                            Icon(
+                                Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
-                            ModernDivider()
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    ),
+                    singleLine = true
+                )
+                
+                // Search Results Dropdown
+                if (expanded && searchResults.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 250.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        LazyColumn {
+                            items(searchResults) { product ->
+                                SearchResultItem(
+                                    product = product,
+                                    onClick = {
+                                        onProductSelected(product)
+                                        onQueryChange("")
+                                        expanded = false
+                                    }
+                                )
+                                if (product != searchResults.last()) {
+                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
+                                }
+                            }
                         }
                     }
                 }
@@ -751,63 +746,89 @@ fun SearchResultItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(16.dp),
+            .padding(12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = product.productName,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text = "${product.brand} - ${product.model}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 2.dp)
+            ) {
+                Text(
+                    text = "Brand: ${product.brand}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text("•", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    text = "Model: ${product.model}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             
-            // Color and Variant Info
+            // Compact Color and Variant badges
             if (!product.color.isNullOrBlank() || !product.variant.isNullOrBlank()) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.padding(top = 4.dp)
                 ) {
                     if (!product.color.isNullOrBlank()) {
-                        Text(
-                            text = "🎨 ${product.color}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = "🎨 ${product.color}",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                     if (!product.variant.isNullOrBlank()) {
-                        Text(
-                            text = "💾 ${product.variant}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = "💾 ${product.variant}",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
             }
-            
+        }
+        
+        Spacer(modifier = Modifier.width(8.dp))
+        
+        // Price and Stock
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = "₹${NumberFormat.getInstance().format(product.sellingPrice)}",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
             Text(
                 text = "Stock: ${product.currentStock}",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelSmall,
                 color = if (product.currentStock > 0) {
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.tertiary
                 } else {
                     MaterialTheme.colorScheme.error
                 }
             )
         }
-        Text(
-            text = "₹${NumberFormat.getInstance().format(product.sellingPrice)}",
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
     }
 }
 
@@ -843,6 +864,7 @@ fun EmptyCartPlaceholder() {
 @Composable
 fun CartItemCard(
     cartItem: com.billme.app.ui.screen.billing.CartItem,
+    imeiData: com.billme.app.data.local.entity.ProductIMEI? = null,
     onIncrease: () -> Unit,
     onDecrease: () -> Unit,
     onRemove: () -> Unit,
@@ -852,78 +874,181 @@ fun CartItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 3.dp,
-            pressedElevation = 6.dp
-        ),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp)
         ) {
-            // Product Info - More compact
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = cartItem.product.productName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "${cartItem.product.brand} - ${cartItem.product.model}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                // Color and Variant
-                if (!cartItem.product.color.isNullOrBlank() || !cartItem.product.variant.isNullOrBlank()) {
+            // Header Row: Product Name and Delete
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = cartItem.product.productName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(vertical = 2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(top = 2.dp)
                     ) {
-                        if (!cartItem.product.color.isNullOrBlank()) {
+                        Text(
+                            text = "Brand: ${cartItem.product.brand}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text("•", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            text = "Model: ${cartItem.product.model}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Remove",
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+            
+            // Color and Variant Row
+            if (!cartItem.product.color.isNullOrBlank() || !cartItem.product.variant.isNullOrBlank()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(vertical = 6.dp)
+                ) {
+                    if (!cartItem.product.color.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        ) {
                             Text(
                                 text = "🎨 ${cartItem.product.color}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
-                        if (!cartItem.product.variant.isNullOrBlank()) {
+                    }
+                    if (!cartItem.product.variant.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                        ) {
                             Text(
                                 text = "💾 ${cartItem.product.variant}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                     }
                 }
-                
+            }
+            
+            // Display IMEI information if available
+            if (imeiData != null) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.QrCode2,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "IMEI 1:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = imeiData.imeiNumber,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        )
+                    }
+                    if (!imeiData.imei2Number.isNullOrBlank()) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.QrCode2,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "IMEI 2:",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = imeiData.imei2Number,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            )
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Bottom Row: Price, Quantity Controls, Total
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Price with edit button
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Price:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Text(
                         text = "₹${NumberFormat.getInstance().format(cartItem.effectivePrice)}",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    if (cartItem.customPrice != null) {
-                        Badge(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        ) {
-                            Text("Custom", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
                     IconButton(
                         onClick = onEditPrice,
                         modifier = Modifier.size(20.dp)
@@ -936,73 +1061,57 @@ fun CartItemCard(
                         )
                     }
                 }
-            }
-            
-            Spacer(modifier = Modifier.width(4.dp))
-            
-            // Quantity Controls - Compact horizontal layout
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                IconButton(
-                    onClick = onDecrease,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Remove,
-                        contentDescription = "Decrease",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
                 
-                Text(
-                    text = cartItem.quantity.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.widthIn(min = 20.dp)
-                )
+                Spacer(modifier = Modifier.width(8.dp))
                 
-                IconButton(
-                    onClick = onIncrease,
-                    modifier = Modifier.size(28.dp),
-                    enabled = cartItem.quantity < cartItem.product.currentStock
+                // Quantity Controls - More compact
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Increase",
-                        modifier = Modifier.size(18.dp),
-                        tint = if (cartItem.quantity < cartItem.product.currentStock) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        IconButton(
+                            onClick = onDecrease,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Remove,
+                                contentDescription = "Decrease",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
-                    )
-                }
-                
-                IconButton(
-                    onClick = onRemove,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Remove",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                        
+                        Text(
+                            text = cartItem.quantity.toString(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.widthIn(min = 24.dp),
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        IconButton(
+                            onClick = onIncrease,
+                            modifier = Modifier.size(32.dp),
+                            enabled = cartItem.quantity < cartItem.product.currentStock
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Increase",
+                                modifier = Modifier.size(16.dp),
+                                tint = if (cartItem.quantity < cartItem.product.currentStock) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                }
+                            )
+                        }
+                    }
                 }
             }
-            
-            Spacer(modifier = Modifier.width(4.dp))
-            
-            // Total - Compact
-            Text(
-                text = "₹${NumberFormat.getInstance().format(cartItem.totalPrice)}",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.widthIn(min = 60.dp)
-            )
         }
     }
 }
@@ -1018,135 +1127,137 @@ fun BillingSummary(
     onSubtotalEdit: (() -> Unit)? = null,
     onTotalEdit: (() -> Unit)? = null
 ) {
-    Card(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-        )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+        // Subtotal
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Subtotal with optional edit button
+            Text(
+                text = "Subtotal",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "Subtotal",
-                    style = MaterialTheme.typography.bodyMedium
+                    text = "₹${NumberFormat.getInstance().format(subtotal)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = "₹${NumberFormat.getInstance().format(subtotal)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    if (onSubtotalEdit != null) {
-                        IconButton(
-                            onClick = onSubtotalEdit,
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Edit,
-                                contentDescription = "Edit Subtotal",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-            }
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Discount",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = "- ₹${NumberFormat.getInstance().format(discount)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                if (onSubtotalEdit != null) {
                     IconButton(
-                        onClick = onDiscountClick,
-                        modifier = Modifier.size(24.dp)
+                        onClick = onSubtotalEdit,
+                        modifier = Modifier.size(20.dp)
                     ) {
                         Icon(
                             Icons.Default.Edit,
-                            contentDescription = "Edit Discount",
-                            modifier = Modifier.size(16.dp),
+                            contentDescription = "Edit Subtotal",
+                            modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
             }
-            
-            SummaryRow("GST (18%)", gstAmount, compact = true)
-            
-            HorizontalDivider()
-            
+        }
+        
+        // Discount
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Discount",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "Total",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = if (discount > BigDecimal.ZERO) "-₹${NumberFormat.getInstance().format(discount)}" else "-₹0.00",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = if (discount > BigDecimal.ZERO) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                IconButton(
+                    onClick = onDiscountClick,
+                    modifier = Modifier.size(20.dp)
                 ) {
-                    Text(
-                        text = "₹${NumberFormat.getInstance().format(total)}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit Discount",
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                    if (onTotalEdit != null) {
-                        IconButton(
-                            onClick = onTotalEdit,
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Edit,
-                                contentDescription = "Edit Total",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
                 }
             }
-            
-            if (profit > BigDecimal.ZERO) {
+        }
+        
+        // GST Amount
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "GST (18%)",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "₹${NumberFormat.getInstance().format(gstAmount)}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+        }
+        
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        
+        // Total
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Total",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
-                    text = "Profit: ₹${NumberFormat.getInstance().format(profit)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.align(Alignment.End)
+                    text = "₹${NumberFormat.getInstance().format(total)}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
+                if (onTotalEdit != null) {
+                    IconButton(
+                        onClick = onTotalEdit,
+                        modifier = Modifier.size(20.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Edit Total",
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
         }
     }
@@ -1177,81 +1288,65 @@ fun PaymentMethodButtons(
 ) {
     var selectedMethod by remember { mutableStateOf<String?>(null) }
     
-    Card(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        Text(
+            text = "Payment Method",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Payment Method",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (selectedMethod != null) {
-                    Text(
-                        text = "✓ Selected",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                PaymentButton(
-                    text = "Cash",
-                    icon = Icons.Default.Money,
-                    enabled = enabled,
-                    isSelected = selectedMethod == "CASH",
-                    onClick = { 
-                        selectedMethod = "CASH"
-                        onPaymentSelected("CASH") 
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-                PaymentButton(
-                    text = "Card",
-                    icon = Icons.Default.CreditCard,
-                    enabled = enabled,
-                    isSelected = selectedMethod == "CARD",
-                    onClick = { 
-                        selectedMethod = "CARD"
-                        onPaymentSelected("CARD") 
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-                PaymentButton(
-                    text = "UPI",
-                    icon = Icons.Default.QrCode2,
-                    enabled = enabled,
-                    isSelected = selectedMethod == "UPI",
-                    onClick = { 
-                        selectedMethod = "UPI"
-                        onPaymentSelected("UPI") 
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            PaymentButton(
+                text = "Cash",
+                icon = Icons.Default.Money,
+                enabled = enabled,
+                isSelected = selectedMethod == "CASH",
+                onClick = { 
+                    selectedMethod = "CASH"
+                    onPaymentSelected("CASH") 
+                },
+                modifier = Modifier.weight(1f)
+            )
+            PaymentButton(
+                text = "Card",
+                icon = Icons.Default.CreditCard,
+                enabled = enabled,
+                isSelected = selectedMethod == "CARD",
+                onClick = { 
+                    selectedMethod = "CARD"
+                    onPaymentSelected("CARD") 
+                },
+                modifier = Modifier.weight(1f)
+            )
+            // UPI button with custom text logo
+            UpiPaymentButton(
+                enabled = enabled,
+                isSelected = selectedMethod == "UPI",
+                onClick = { 
+                    selectedMethod = "UPI"
+                    onPaymentSelected("UPI") 
+                },
+                modifier = Modifier.weight(1f)
+            )
+            PaymentButton(
+                text = "EMI",
+                icon = Icons.Default.AccountBalance,
+                enabled = enabled,
+                isSelected = selectedMethod == "EMI",
+                onClick = { 
+                    selectedMethod = "EMI"
+                    onPaymentSelected("EMI") 
+                },
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
@@ -1279,7 +1374,7 @@ fun PaymentButton(
     
     Card(
         onClick = onClick,
-        modifier = modifier.height(72.dp),
+        modifier = modifier.height(80.dp),
         enabled = enabled,
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
@@ -1291,10 +1386,73 @@ fun PaymentButton(
             color = if (isSelected) 
                 MaterialTheme.colorScheme.primary 
             else 
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                MaterialTheme.colorScheme.outlineVariant
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 4.dp else 1.dp
+            defaultElevation = if (isSelected) 2.dp else 0.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = text,
+                modifier = Modifier.size(32.dp),
+                tint = contentColor
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = contentColor
+            )
+        }
+    }
+}
+
+@Composable
+fun UpiPaymentButton(
+    enabled: Boolean,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val containerColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    
+    val contentColor = if (isSelected) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    
+    Card(
+        onClick = onClick,
+        modifier = modifier.height(80.dp),
+        enabled = enabled,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) 
+                MaterialTheme.colorScheme.primary 
+            else 
+                MaterialTheme.colorScheme.outlineVariant
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 2.dp else 0.dp
         )
     ) {
         Column(
@@ -1304,17 +1462,32 @@ fun PaymentButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = text,
-                modifier = Modifier.size(28.dp),
-                tint = contentColor
-            )
-            Spacer(modifier = Modifier.height(6.dp))
+            // Custom UPI logo using text
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = if (isSelected) 
+                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+                else 
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+            ) {
+                Text(
+                    text = "UPI",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    color = if (isSelected) 
+                        MaterialTheme.colorScheme.onPrimary 
+                    else 
+                        MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    letterSpacing = 1.2.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = text,
+                text = "UPI",
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 color = contentColor
             )
         }
@@ -1333,10 +1506,16 @@ fun DiscountDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Apply Discount") },
+        title = { 
+            Text(
+                "Apply Discount",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            ) 
+        },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedTextField(
                     value = discountText,
@@ -1348,18 +1527,38 @@ fun DiscountDialog(
                     prefix = { Text("₹") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = errorMessage != null,
-                    supportingText = errorMessage?.let { { Text(it) } },
-                    modifier = Modifier.fillMaxWidth()
+                    supportingText = errorMessage?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
                 )
-                Text(
-                    text = "Max discount: ₹${NumberFormat.getInstance().format(maxDiscount)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Max discount:",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "₹${NumberFormat.getInstance().format(maxDiscount)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
                     val discount = discountText.toBigDecimalOrNull()
                     when {
@@ -1368,7 +1567,8 @@ fun DiscountDialog(
                         discount > maxDiscount -> errorMessage = "Discount exceeds subtotal"
                         else -> onConfirm(discount)
                     }
-                }
+                },
+                shape = RoundedCornerShape(8.dp)
             ) {
                 Text("Apply")
             }
@@ -1377,7 +1577,8 @@ fun DiscountDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+        shape = RoundedCornerShape(16.dp)
     )
 }
 
@@ -1392,7 +1593,13 @@ fun SubtotalEditDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Subtotal / Selling Price") },
+        title = { 
+            Text(
+                "Edit Subtotal",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            ) 
+        },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -1414,20 +1621,21 @@ fun SubtotalEditDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = errorMessage != null,
                     supportingText = errorMessage?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
                 )
                 
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                    )
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
                             text = "Current Subtotal:",
@@ -1441,16 +1649,10 @@ fun SubtotalEditDialog(
                         )
                     }
                 }
-                
-                Text(
-                    text = "⚠️ Note: Manual adjustments will affect profit calculations",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
                     val newSubtotal = subtotalText.toBigDecimalOrNull()
                     when {
@@ -1458,7 +1660,8 @@ fun SubtotalEditDialog(
                         newSubtotal <= BigDecimal.ZERO -> errorMessage = "Subtotal must be greater than zero"
                         else -> onConfirm(newSubtotal)
                     }
-                }
+                },
+                shape = RoundedCornerShape(8.dp)
             ) {
                 Text("Update")
             }
@@ -1467,7 +1670,8 @@ fun SubtotalEditDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+        shape = RoundedCornerShape(16.dp)
     )
 }
 
@@ -1483,7 +1687,13 @@ fun TotalEditDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Total Amount") },
+        title = { 
+            Text(
+                "Edit Total Amount",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            ) 
+        },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -1505,18 +1715,21 @@ fun TotalEditDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = errorMessage != null,
                     supportingText = errorMessage?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
                 )
                 
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1524,14 +1737,13 @@ fun TotalEditDialog(
                         ) {
                             Text(
                                 "Current Total:",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
                                 "₹${NumberFormat.getInstance().format(currentTotal)}",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                         if (currentDiscount > BigDecimal.ZERO) {
@@ -1542,7 +1754,7 @@ fun TotalEditDialog(
                                 Text(
                                     "Current Discount:",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     "₹${NumberFormat.getInstance().format(currentDiscount)}",
@@ -1552,18 +1764,12 @@ fun TotalEditDialog(
                                 )
                             }
                         }
-                        Text(
-                            "Note: Discount will be removed when editing total",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
                     val newTotal = totalText.toBigDecimalOrNull()
                     when {
@@ -1571,7 +1777,8 @@ fun TotalEditDialog(
                         newTotal <= BigDecimal.ZERO -> errorMessage = "Total must be greater than zero"
                         else -> onConfirm(newTotal)
                     }
-                }
+                },
+                shape = RoundedCornerShape(8.dp)
             ) {
                 Text("Update")
             }
@@ -1580,7 +1787,8 @@ fun TotalEditDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+        shape = RoundedCornerShape(16.dp)
     )
 }
 

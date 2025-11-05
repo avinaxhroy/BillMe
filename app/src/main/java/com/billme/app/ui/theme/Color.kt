@@ -40,18 +40,18 @@ val InfoLight = Color(0xFF64B5F6)
 val InfoContainer = Color(0xFFE3F2FD)
 
 // Background Colors - Light Theme with Better Contrast
-val BackgroundLight = Color(0xFFF8F9FA)
+val BackgroundLight = Color(0xFFF5F5F5)
 val SurfaceLight = Color(0xFFFFFFFF)
-val Surface1Light = Color(0xFFF5F7FA)
+val Surface1Light = Color(0xFFF8F9FA)
 val Surface2Light = Color(0xFFEDF0F5)
 val Surface3Light = Color(0xFFE5E9EF)
 
-// Background Colors - Dark Theme with Enhanced Visibility
+// Background Colors - Dark Theme with Enhanced Visibility and Comfort
 val BackgroundDark = Color(0xFF121212)
 val SurfaceDark = Color(0xFF1E1E1E)
-val Surface1Dark = Color(0xFF252525)
-val Surface2Dark = Color(0xFF2C2C2C)
-val Surface3Dark = Color(0xFF373737)
+val Surface1Dark = Color(0xFF2D2D2D)
+val Surface2Dark = Color(0xFF3A3A3A)
+val Surface3Dark = Color(0xFF474747)
 
 // Text Colors - Light Theme with Enhanced Readability
 val TextPrimaryLight = Color(0xFF212121)
@@ -59,17 +59,17 @@ val TextSecondaryLight = Color(0xFF616161)
 val TextTertiaryLight = Color(0xFF9E9E9E)
 val TextDisabledLight = Color(0xFFBDBDBD)
 
-// Text Colors - Dark Theme with Better Contrast
-val TextPrimaryDark = Color(0xFFFAFAFA)
-val TextSecondaryDark = Color(0xFFE0E0E0)
-val TextTertiaryDark = Color(0xFF9E9E9E)
-val TextDisabledDark = Color(0xFF757575)
+// Text Colors - Dark Theme with Better Contrast and Readability
+val TextPrimaryDark = Color(0xFFE8E8E8)
+val TextSecondaryDark = Color(0xFFB8B8B8)
+val TextTertiaryDark = Color(0xFF888888)
+val TextDisabledDark = Color(0xFF606060)
 
-// Outline Colors with Better Definition
+// Outline Colors with Better Definition for Dark Mode
 val OutlineLight = Color(0xFFDEE2E6)
 val OutlineVariantLight = Color(0xFFF1F3F5)
-val OutlineDark = Color(0xFF404040)
-val OutlineVariantDark = Color(0xFF303030)
+val OutlineDark = Color(0xFF505050)
+val OutlineVariantDark = Color(0xFF404040)
 
 // Scrim and Overlay
 val Scrim = Color(0x88000000)
@@ -91,15 +91,15 @@ val GlassLight = Color(0xCCFFFFFF)
 val GlassDark = Color(0xCC1A1F29)
 val GlassBorder = Color(0x33FFFFFF)
 
-// Card and Component Colors
+// Card and Component Colors with Enhanced Dark Mode Support
 val CardLight = Color(0xFFFFFFFF)
-val CardDark = Color(0xFF1E2433)
+val CardDark = Color(0xFF2D2D2D)
 val CardElevatedLight = Color(0xFFFAFBFF)
-val CardElevatedDark = Color(0xFF252B3B)
+val CardElevatedDark = Color(0xFF353535)
 
-// Divider Colors
+// Divider Colors for Light and Dark Mode
 val DividerLight = Color(0xFFE5E5E5)
-val DividerDark = Color(0xFF2D3340)
+val DividerDark = Color(0xFF404040)
 
 // Shimmer Effect Colors
 val ShimmerHighLight = Color(0xCCFFFFFF)

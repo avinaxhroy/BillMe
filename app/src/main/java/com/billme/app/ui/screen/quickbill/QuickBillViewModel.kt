@@ -307,6 +307,7 @@ class QuickBillViewModel @Inject constructor(
                     "CASH" -> PaymentMethod.CASH
                     "CARD" -> PaymentMethod.CARD
                     "UPI" -> PaymentMethod.UPI
+                    "EMI" -> PaymentMethod.EMI
                     else -> PaymentMethod.OTHER
                 }
                 
@@ -373,8 +374,27 @@ class QuickBillViewModel @Inject constructor(
                         )
                         // Sync stock with available IMEIs
                         database.productDao().syncStockWithAvailableIMEIs(cartItem.product.productId)
+                    } else if (cartItem.product.imei1.isNotBlank()) {
+                        // Fallback: If no imeiId but product has IMEI string, look it up and mark as sold
+                        val imeiRecord = database.productIMEIDao().getIMEIByNumber(cartItem.product.imei1)
+                        if (imeiRecord != null) {
+                            database.productIMEIDao().markAsSold(
+                                imeiId = imeiRecord.imeiId,
+                                soldDate = now,
+                                soldPrice = cartItem.product.sellingPrice,
+                                transactionId = transactionId,
+                                updatedAt = now
+                            )
+                            // Sync stock with available IMEIs
+                            database.productDao().syncStockWithAvailableIMEIs(cartItem.product.productId)
+                        }
+                        // Also reduce stock
+                        database.productDao().reduceStock(
+                            productId = cartItem.product.productId,
+                            quantity = cartItem.quantity
+                        )
                     } else {
-                        // Regular stock reduction
+                        // Regular stock reduction (no IMEI tracking)
                         database.productDao().reduceStock(
                             productId = cartItem.product.productId,
                             quantity = cartItem.quantity
@@ -459,8 +479,15 @@ class QuickBillViewModel @Inject constructor(
             val shopSettings = getShopSettings()
             val gstConfig = getGSTConfiguration()
             
+            // Get IMEI details for all items in this transaction
+            val transactionIMEIs = database.productIMEIDao().getIMEIsByTransaction(transactionId)
+            val imeiMap = transactionIMEIs.associateBy { it.imeiNumber }
+            
             // Convert TransactionLineItem to TransactionItem for PDF generator
             val items = lineItems.map { lineItem ->
+                // Get IMEI details if available
+                val imeiDetails = imeiMap[lineItem.imeiSold]
+                
                 // Get product details for color and variant
                 val product = database.productDao().getProductById(lineItem.productId)
                 
@@ -479,7 +506,9 @@ class QuickBillViewModel @Inject constructor(
                     totalPrice = lineItem.lineTotal,
                     discountAmount = BigDecimal.ZERO,
                     taxAmount = BigDecimal.ZERO,
-                    notes = null
+                    notes = null,
+                    imeiNumber = imeiDetails?.imeiNumber,
+                    imei2Number = imeiDetails?.imei2Number
                 )
             }
             

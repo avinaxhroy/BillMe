@@ -54,16 +54,41 @@ fun BigDecimal.formatIndianCurrency(): String {
 }
 
 /**
- * Format number as compact string (1K, 1M, etc.)
+ * Format number as compact string in Indian format
+ * - K for thousands (1,000+)
+ * - L for lakhs (1,00,000+)  
+ * - C for crores (1,00,00,000+)
+ * This format is perfect for displaying large amounts in limited space
  */
 fun BigDecimal.formatCompact(): String {
     val value = this.toDouble()
+    val absValue = kotlin.math.abs(value)
+    val sign = if (value < 0) "-" else ""
+    
     return when {
-        value >= 10000000 -> "₹${(value / 10000000).format(1)}Cr"
-        value >= 100000 -> "₹${(value / 100000).format(1)}L"
-        value >= 1000 -> "₹${(value / 1000).format(1)}K"
-        else -> this.formatCurrency()
+        absValue >= 10000000 -> { // 1 Crore or more
+            val crores = absValue / 10000000
+            "${sign}₹%.2fC".format(crores)
+        }
+        absValue >= 100000 -> { // 1 Lakh or more
+            val lakhs = absValue / 100000
+            "${sign}₹%.2fL".format(lakhs)
+        }
+        absValue >= 1000 -> { // 1 Thousand or more
+            val thousands = absValue / 1000
+            "${sign}₹%.2fK".format(thousands)
+        }
+        else -> { // Less than 1000, show full amount
+            this.formatCurrency()
+        }
     }
+}
+
+/**
+ * Format Double as compact currency in Indian format
+ */
+fun Double.formatCompactCurrency(): String {
+    return BigDecimal.valueOf(this).formatCompact()
 }
 
 /**

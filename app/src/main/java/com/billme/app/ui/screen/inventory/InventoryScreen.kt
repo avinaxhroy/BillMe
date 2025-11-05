@@ -30,6 +30,7 @@ import com.billme.app.core.scanner.IMEIScanMode
 import com.billme.app.ui.component.*
 import com.billme.app.ui.theme.*
 import com.billme.app.core.util.formatLocale
+import com.billme.app.core.util.formatCompactCurrency
 import java.text.NumberFormat
 import java.util.*
 import javax.inject.Inject
@@ -61,51 +62,71 @@ fun InventoryScreen(
     Scaffold(
         topBar = {
             if (uiState.isSelectionMode) {
-                // Selection mode toolbar with gradient
-                ModernTopAppBar(
-                    title = "${uiState.selectedProductIds.size} selected",
-                    subtitle = "Bulk actions available",
-                    navigationIcon = Icons.Default.Close,
-                    onNavigationClick = { viewModel.exitSelectionMode() },
-                    useGradient = true,
-                    gradientColors = listOf(Secondary, SecondaryLight),
+                // Selection mode toolbar
+                TopAppBar(
+                    title = { 
+                        Column {
+                            Text(
+                                "${uiState.selectedProductIds.size} selected",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Bulk actions available",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { viewModel.exitSelectionMode() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Exit selection mode")
+                        }
+                    },
                     actions = {
                         // Select All
                         IconButton(onClick = { viewModel.selectAllProducts() }) {
-                            Icon(
-                                Icons.Default.SelectAll,
-                                contentDescription = "Select All",
-                                tint = Color.White
-                            )
+                            Icon(Icons.Default.SelectAll, contentDescription = "Select All")
                         }
                         
                         // Delete Selected
                         IconButton(onClick = { viewModel.deleteSelectedProducts() }) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "Delete Selected",
-                                tint = Color.White
-                            )
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Selected")
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
             } else {
-                // Normal mode toolbar - Use compact version
-                ModernTopAppBar(
-                    title = "Inventory",
-                    subtitle = "${uiState.products.size} products",
-                    navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
-                    onNavigationClick = onNavigateBack,
-                    useGradient = true,
+                // Normal mode toolbar - Modern clean design
+                TopAppBar(
+                    title = { 
+                        Column {
+                            Text(
+                                "Inventory",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Manage your products with ease.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
                     actions = {
                         // More Actions
                         Box {
                             IconButton(onClick = { showActionsMenu = true }) {
-                                Icon(
-                                    Icons.Default.MoreVert,
-                                    contentDescription = "More Actions",
-                                    tint = Color.White
-                                )
+                                Icon(Icons.Default.MoreVert, contentDescription = "More Actions")
                             }
                             
                             DropdownMenu(
@@ -144,26 +165,27 @@ fun InventoryScreen(
         },
         floatingActionButton = {
             if (!uiState.isSelectionMode) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.End
-                ) {
-                    // Add Purchase FAB
-                    ModernFloatingActionButton(
-                        onClick = onNavigateToAddPurchase,
-                        icon = Icons.Default.ShoppingCart,
-                        contentDescription = "Add Purchase"
-                    )
-                    
-                    // Add Product FAB
-                    ModernExtendedFAB(
-                        text = "Add Product",
-                        icon = Icons.Default.Add,
-                        onClick = onNavigateToAddProduct,
-                        expanded = true,
-                        useGradient = true
-                    )
-                }
+                // Add Product FAB - Large and prominent
+                ExtendedFloatingActionButton(
+                    onClick = onNavigateToAddProduct,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White,
+                    expanded = true,
+                    icon = {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    text = {
+                        Text(
+                            "Add Product",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                )
             }
         }
     ) { paddingValues ->
@@ -172,8 +194,8 @@ fun InventoryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            contentPadding = PaddingValues(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Statistics Cards
             item {
@@ -191,7 +213,7 @@ fun InventoryScreen(
                     onQueryChange = viewModel::onSearchQueryChange,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 2.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 )
             }
             
@@ -201,7 +223,7 @@ fun InventoryScreen(
                     categories = uiState.categories,
                     selectedCategory = uiState.selectedCategory,
                     onCategorySelected = viewModel::onCategorySelected,
-                    modifier = Modifier.padding(vertical = 2.dp)
+                    modifier = Modifier.padding(vertical = 4.dp)
                 )
             }
             
@@ -210,26 +232,32 @@ fun InventoryScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilterChip(
                         selected = uiState.showLowStockOnly,
                         onClick = viewModel::toggleLowStockFilter,
-                        label = { Text("Low Stock Only", style = MaterialTheme.typography.labelSmall) },
+                        label = { Text("Low Stock Only", style = MaterialTheme.typography.labelMedium) },
                         leadingIcon = {
                             Icon(
                                 imageVector = if (uiState.showLowStockOnly) Icons.Default.CheckCircle else Icons.Default.Warning,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
-                        }
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.error,
+                            selectedLabelColor = Color.White
+                        )
                     )
                     
                     Text(
                         text = "${uiState.filteredProducts.size} items",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -245,37 +273,39 @@ fun InventoryScreen(
                     items = uiState.filteredProducts,
                     key = { it.productId }
                 ) { product ->
-                    ExpandableProductCard(
-                        product = product,
-                        imeis = uiState.productIMEIs[product.productId],
-                        isExpanded = uiState.expandedProductId == product.productId,
-                        isSelectionMode = uiState.isSelectionMode,
-                        isSelected = uiState.selectedProductIds.contains(product.productId),
-                        onToggleExpand = { 
-                            viewModel.toggleProductExpansion(product.productId)
-                        },
-                        onToggleSelection = {
-                            viewModel.toggleProductSelection(product.productId)
-                        },
-                        onEditProduct = {
-                            selectedProduct = product
-                            showEditProductDialog = true
-                        },
-                        onDeleteProduct = {
-                            viewModel.deleteProduct(product)
-                        },
-                        onAddIMEI = {
-                            selectedProduct = product
-                            showAddIMEIDialog = true
-                        },
-                        onEditIMEI = { imei ->
-                            selectedIMEI = imei
-                            showEditIMEIDialog = true
-                        },
-                        onDeleteIMEI = { imei ->
-                            viewModel.deleteIMEI(imei)
-                        }
-                    )
+                    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        ExpandableProductCard(
+                            product = product,
+                            imeis = uiState.productIMEIs[product.productId],
+                            isExpanded = uiState.expandedProductId == product.productId,
+                            isSelectionMode = uiState.isSelectionMode,
+                            isSelected = uiState.selectedProductIds.contains(product.productId),
+                            onToggleExpand = { 
+                                viewModel.toggleProductExpansion(product.productId)
+                            },
+                            onToggleSelection = {
+                                viewModel.toggleProductSelection(product.productId)
+                            },
+                            onEditProduct = {
+                                selectedProduct = product
+                                showEditProductDialog = true
+                            },
+                            onDeleteProduct = {
+                                viewModel.deleteProduct(product)
+                            },
+                            onAddIMEI = {
+                                selectedProduct = product
+                                showAddIMEIDialog = true
+                            },
+                            onEditIMEI = { imei ->
+                                selectedIMEI = imei
+                                showEditIMEIDialog = true
+                            },
+                            onDeleteIMEI = { imei ->
+                                viewModel.deleteIMEI(imei)
+                            }
+                        )
+                    }
                 }
                 
                 // Bottom padding for FAB
@@ -474,32 +504,222 @@ fun InventoryStatistics(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        ModernStatCard(
-            title = "Products",
-            value = totalProducts.toString(),
-            icon = Icons.Default.Inventory,
+        // Total Products Card - Large featured card
+        Card(
+            modifier = Modifier
+                .weight(1.5f)
+                .height(140.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
+                            )
+                        )
+                    )
+                    .padding(20.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White.copy(alpha = 0.25f),
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Inventory2,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                    }
+                    
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = totalProducts.toString(),
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Products",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.95f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+        
+        // Small cards column
+        Column(
             modifier = Modifier.weight(1f),
-            iconColor = MaterialTheme.colorScheme.primary
-        )
-        ModernStatCard(
-            title = "Low Stock",
-            value = lowStockCount.toString(),
-            icon = Icons.Default.Warning,
-            modifier = Modifier.weight(1f),
-            trend = if (lowStockCount > 0) "$lowStockCount" else null,
-            trendPositive = lowStockCount == 0,
-            iconColor = if (lowStockCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-        )
-        ModernStatCard(
-            title = "Value",
-            value = formatCurrency(totalValue),
-            icon = Icons.Default.CurrencyRupee,
-            modifier = Modifier.weight(1f),
-            iconColor = Tertiary
-        )
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Low Stock Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (lowStockCount > 0) 
+                        Color(0xFFFEE2E2)
+                    else 
+                        Color(0xFFE0F2FE)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (lowStockCount > 0) 
+                            Color(0xFFEF4444).copy(alpha = 0.2f)
+                        else 
+                            Color(0xFF0EA5E9).copy(alpha = 0.2f),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = if (lowStockCount > 0) 
+                                    Color(0xFFDC2626)
+                                else 
+                                    Color(0xFF0284C7),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    
+                    Column(
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        Text(
+                            text = lowStockCount.toString(),
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (lowStockCount > 0) 
+                                Color(0xFFDC2626)
+                            else 
+                                Color(0xFF0284C7)
+                        )
+                        Text(
+                            text = "Low Stock",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF64748B),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+            
+            // Total Value Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFDCFCE7)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFF10B981).copy(alpha = 0.2f),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CurrencyRupee,
+                                contentDescription = null,
+                                tint = Color(0xFF059669),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.weight(1f, fill = false)
+                    ) {
+                        Text(
+                            text = formatCompactCurrency(totalValue),
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF059669),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "Total Value",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF64748B),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Helper function to format currency in compact form
+private fun formatCompactCurrency(value: Double): String {
+    return when {
+        value >= 10000000 -> {
+            val crores = value / 10000000
+            if (crores >= 100) "₹%.0fCr".format(crores) else "₹%.1fCr".format(crores)
+        }
+        value >= 100000 -> {
+            val lakhs = value / 100000
+            if (lakhs >= 100) "₹%.0fL".format(lakhs) else "₹%.1fL".format(lakhs)
+        }
+        value >= 1000 -> {
+            val thousands = value / 1000
+            if (thousands >= 100) "₹%.0fK".format(thousands) else "₹%.1fK".format(thousands)
+        }
+        else -> "₹%.0f".format(value)
     }
 }
 
@@ -554,11 +774,44 @@ fun SearchBar(
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ModernSearchField(
+    OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = "Search by name, brand, IMEI, barcode...",
         modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        placeholder = { 
+            Text(
+                "Search products...",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            ) 
+        },
+        leadingIcon = {
+            Icon(
+                Icons.Default.Search,
+                contentDescription = "Search",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Clear",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        },
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            focusedBorderColor = MaterialTheme.colorScheme.primary
+        ),
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyMedium
     )
 }
 
@@ -575,10 +828,33 @@ fun CategoryFilter(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(categories) { category ->
-            ModernFilterChip(
+            FilterChip(
                 selected = category == selectedCategory,
                 onClick = { onCategorySelected(category) },
-                label = category
+                label = { 
+                    Text(
+                        category,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (category == selectedCategory) FontWeight.SemiBold else FontWeight.Normal
+                    ) 
+                },
+                shape = RoundedCornerShape(20.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = category == selectedCategory,
+                    borderColor = if (category == selectedCategory) 
+                        MaterialTheme.colorScheme.primary 
+                    else 
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                    borderWidth = 1.dp,
+                    selectedBorderWidth = 0.dp
+                )
             )
         }
     }
@@ -769,14 +1045,48 @@ fun ProductCard(
 
 @Composable
 fun EmptyInventoryPlaceholder() {
-    ModernEmptyState(
-        icon = Icons.Default.Inventory,
-        title = "No products found",
-        description = "Try adjusting your search or filters",
+    Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp)
-    )
+            .fillMaxWidth()
+            .padding(48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+            modifier = Modifier.size(80.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Icon(
+                    Icons.Default.Inventory,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Text(
+            text = "No products found",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = "Try adjusting your search or filters",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 @Composable
@@ -980,6 +1290,5 @@ fun DetailRow(
 }
 
 fun formatCurrency(amount: Double): String {
-    val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
-    return format.format(amount)
+    return amount.formatCompactCurrency()
 }

@@ -253,45 +253,35 @@ fun AddIMEIDialog(
         UnifiedIMEIScannerDialog(
             onDismiss = { showBulkScanDialog = false },
             onIMEIScanned = { imeis ->
-                // Process bulk scanned IMEIs intelligently
+                // Extract just the IMEI strings from the scanned list
+                // Use same logic as AddProduct screen
                 if (imeis.isNotEmpty()) {
-                    // Group IMEIs by phone (IMEI1 and IMEI2 pairs)
+                    val imeiStrings = imeis.map { it.imei }
+                    
+                    // Pair up IMEIs: every 2 consecutive IMEIs = 1 device (IMEI1, IMEI2)
                     val groupedByPhone = mutableListOf<Pair<String, String?>>()
                     var i = 0
-                    while (i < imeis.size) {
-                        val currentIMEI = imeis[i]
+                    
+                    while (i < imeiStrings.size) {
+                        val imei1 = imeiStrings[i]
+                        val imei2 = if (i + 1 < imeiStrings.size) imeiStrings[i + 1] else null
                         
-                        // Check if this is IMEI1 or IMEI2
-                        if (currentIMEI.position == com.billme.app.core.scanner.IMEIPosition.IMEI1 ||
-                            currentIMEI.position == com.billme.app.core.scanner.IMEIPosition.SINGLE) {
-                            // This is IMEI1, check if next one is IMEI2
-                            val imei2 = if (i + 1 < imeis.size && 
-                                imeis[i + 1].position == com.billme.app.core.scanner.IMEIPosition.IMEI2) {
-                                i += 1 // Skip IMEI2 in next iteration
-                                imeis[i].imei
-                            } else {
-                                null
-                            }
-                            groupedByPhone.add(Pair(currentIMEI.imei, imei2))
-                        }
-                        // If it's an orphan IMEI2, treat it as single phone
-                        else if (currentIMEI.position == com.billme.app.core.scanner.IMEIPosition.IMEI2) {
-                            groupedByPhone.add(Pair(currentIMEI.imei, null))
-                        }
+                        groupedByPhone.add(Pair(imei1, imei2))
                         
-                        i += 1
+                        // Move by 2 if we have a pair, or by 1 if only single IMEI left
+                        i += if (imei2 != null) 2 else 1
                     }
                     
                     // Send all grouped phones to bulk add
                     if (groupedByPhone.isNotEmpty()) {
                         onBulkAdd(groupedByPhone)
-                        onDismiss()
                     }
                 }
                 showBulkScanDialog = false
             },
             scanMode = IMEIScanMode.BULK,
             scanner = unifiedIMEIScanner,
+            showManualEntry = true,
             title = "Bulk Scan - Add Multiple Phones"
         )
     }
