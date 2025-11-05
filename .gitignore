@@ -210,3 +210,4 @@ docker-compose.override.yml
 *.prefs
 .settings/
 
+README.md
