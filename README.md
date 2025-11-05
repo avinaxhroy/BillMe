@@ -8,7 +8,7 @@
 ### Download APP
 
 
-<a href="https://github.com/avinaxhroy/BillMe/releases/latest/download/app-release.apk">
+<a href="https://github.com/avinaxhroy/BillMe/releases/latest/download/BillMe.v3.0.0.apk">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Download-APK-1f6feb?style=for-the-badge&logo=android&logoColor=white">
     <img alt="Download APK" src="https://img.shields.io/badge/Download-APK-3DDC84?style=for-the-badge&logo=android&logoColor=white">
